@@ -55,6 +55,10 @@ export default function Dashboard() {
     queryKey: ["/api/tutorial-releases"],
   });
 
+  const { data: tutorials = [] } = useQuery({
+    queryKey: ["/api/tutorials"],
+  });
+
   
 
   const filteredReleases = releases.filter(release => {
@@ -111,6 +115,14 @@ export default function Dashboard() {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getTutorialNames = (tutorialIds: string[]) => {
+    const names = tutorialIds.map(id => {
+      const tutorial = tutorials.find((t: any) => t.id === id);
+      return tutorial ? tutorial.name : id;
+    });
+    return names.join(', ');
   };
 
   return (
@@ -291,17 +303,8 @@ export default function Dashboard() {
                         <p className="text-sm font-medium">{release.companyName}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="flex flex-wrap gap-1">
-                          {release.tutorialIds.slice(0, 2).map((tutorialId, index) => (
-                            <span key={index} className="px-2 py-1 bg-nextest-blue/10 text-nextest-blue text-xs rounded-full">
-                              {tutorialId}
-                            </span>
-                          ))}
-                          {release.tutorialIds.length > 2 && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                              +{release.tutorialIds.length - 2}
-                            </span>
-                          )}
+                        <div className="text-sm text-gray-700">
+                          {getTutorialNames(release.tutorialIds)}
                         </div>
                       </td>
                       <td className="py-4 px-4">
