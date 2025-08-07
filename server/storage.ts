@@ -13,7 +13,7 @@ import {
   type InsertTutorialRelease
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt, desc } from "drizzle-orm";
+import { eq, and, gt, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -28,12 +28,14 @@ export interface IStorage {
   
   // Tutorials
   getAllTutorials(): Promise<Tutorial[]>;
+  getTutorialsByIds(ids: string[]): Promise<Tutorial[]>;
   createTutorial(tutorial: InsertTutorial): Promise<Tutorial>;
   
   // Tutorial releases
   createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease>;
   getTutorialReleasesByUser(userId: string): Promise<TutorialRelease[]>;
   getAllTutorialReleases(): Promise<(TutorialRelease & { user: User })[]>;
+  updateTutorialReleaseStatus(id: string, status: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -89,6 +91,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(tutorials).where(eq(tutorials.isActive, true));
   }
 
+  async getTutorialsByIds(ids: string[]): Promise<Tutorial[]> {
+    if (ids.length === 0) return [];
+    return await db.select().from(tutorials).where(inArray(tutorials.id, ids));
+  }
+
   async createTutorial(tutorial: InsertTutorial): Promise<Tutorial> {
     const [newTutorial] = await db
       .insert(tutorials)
@@ -134,6 +141,13 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(tutorialReleases.createdAt));
     
     return results.filter(result => result.user !== null) as (TutorialRelease & { user: User })[];
+  }
+
+  async updateTutorialReleaseStatus(id: string, status: string): Promise<void> {
+    await db
+      .update(tutorialReleases)
+      .set({ status })
+      .where(eq(tutorialReleases.id, id));
   }
 }
 

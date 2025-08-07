@@ -198,6 +198,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: (req.session as any).userId
       });
 
+      // Send webhook after successful creation
+      try {
+        await sendTutorialReleaseWebhook(release, releaseData);
+      } catch (webhookError) {
+        console.error('Webhook sending failed:', webhookError);
+        // Continue execution even if webhook fails
+      }
+
       res.json(release);
     } catch (error) {
       console.error('Create release error:', error);
@@ -236,6 +244,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user
+  // Status tracking API for external confirmations
+  app.post("/api/tutorial-releases/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, message } = req.body;
+      
+      if (!['pending', 'success', 'failed'].includes(status)) {
+        return res.status(400).json({ message: "Status inválido. Use: pending, success, failed" });
+      }
+
+      await storage.updateTutorialReleaseStatus(id, status);
+      
+      console.log(`Tutorial release ${id} status updated to: ${status}`, message ? `- ${message}` : '');
+      
+      res.json({ message: "Status atualizado com sucesso", releaseId: id, status });
+    } catch (error) {
+      console.error('Update status error:', error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Erro ao atualizar status" });
+    }
+  });
+
   app.get("/api/auth/me", async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
@@ -257,4 +286,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Webhook function to send tutorial release data
+async function sendTutorialReleaseWebhook(release: any, releaseData: any) {
+  const webhookUrl = "https://wfapi.automai.com.br/webhook/cadastro/cademi";
+  
+  // Get tutorial details for the selected tutorials
+  const tutorials = await storage.getTutorialsByIds(releaseData.tutorialIds);
+  
+  // Prepare webhook payload - this is a generic structure, please provide the exact format
+  const webhookPayload = {
+    id: release.id,
+    client: {
+      name: releaseData.clientName,
+      cpf: releaseData.clientCpf,
+      email: releaseData.clientEmail,
+      phone: releaseData.clientPhone || null,
+      company: {
+        name: releaseData.companyName,
+        role: releaseData.companyRole
+      }
+    },
+    tutorials: tutorials.map((tutorial: any) => ({
+      id: tutorial.id,
+      name: tutorial.name,
+      description: tutorial.description,
+      category: tutorial.category
+    })),
+    createdAt: release.createdAt,
+    status: "pending"
+  };
+
+  console.log('Sending webhook payload:', JSON.stringify(webhookPayload, null, 2));
+  
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(webhookPayload)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Webhook failed with status: ${response.status}`);
+  }
+
+  const responseData = await response.text();
+  console.log('Webhook response:', responseData);
+  
+  return responseData;
 }
