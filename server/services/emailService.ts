@@ -11,7 +11,7 @@ interface EmailConfig {
 }
 
 const port = parseInt(process.env.SMTP_PORT || '587');
-const emailConfig: EmailConfig = {
+const emailConfig: EmailConfig & { tls?: any; authMethod?: string } = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: port,
   secure: port === 465, // Use secure connection for port 465 (SMTPS)
@@ -19,6 +19,10 @@ const emailConfig: EmailConfig = {
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
   },
+  // Additional configuration for better delivery
+  tls: {
+    rejectUnauthorized: false // Accept self-signed certificates
+  }
 };
 
 // Debug logging to identify the issue
@@ -32,9 +36,19 @@ console.log('SMTP_FROM:', process.env.SMTP_FROM);
 
 const transporter = nodemailer.createTransport(emailConfig);
 
+// Test email connection on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.log('❌ Email connection error:', error);
+  } else {
+    console.log('✅ Email server connection successful');
+  }
+});
+
 export async function sendVerificationCode(email: string, code: string): Promise<void> {
   try {
-    console.log(`Attempting to send verification code to: ${email}`);
+    console.log(`📧 Attempting to send verification code to: ${email}`);
+    console.log(`🔑 Verification code: ${code}`);
     
     const mailOptions = {
       from: process.env.SMTP_FROM || 'Portal Nextest <noreply@nextest.com.br>',
@@ -69,14 +83,29 @@ export async function sendVerificationCode(email: string, code: string): Promise
           </div>
         </div>
       </div>
-      `
+      `,
+      text: `Código de Verificação: ${code}\n\nUse este código para acessar o Portal de Tutoriais Nextest.\n\nEste código é válido por 10 minutos.`
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Verification code sent successfully to: ${email}`);
+    console.log(`📬 Mail options configured:`);
+    console.log(`   From: ${mailOptions.from}`);
+    console.log(`   To: ${mailOptions.to}`);
+    console.log(`   Subject: ${mailOptions.subject}`);
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent successfully!`);
+    console.log(`📋 Message info:`, {
+      messageId: info.messageId,
+      response: info.response,
+      envelope: info.envelope
+    });
     
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('❌ Email sending error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
     throw new Error(`Falha ao enviar email: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
