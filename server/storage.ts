@@ -143,6 +143,7 @@ export class DatabaseStorage implements IStorage {
         clientEmail: tutorialReleases.clientEmail,
         clientPhone: tutorialReleases.clientPhone,
         companyName: tutorialReleases.companyName,
+        companyDocument: tutorialReleases.companyDocument,
         companyRole: tutorialReleases.companyRole,
         tutorialIds: tutorialReleases.tutorialIds,
         status: tutorialReleases.status,
