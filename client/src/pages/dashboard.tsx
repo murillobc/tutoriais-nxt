@@ -42,7 +42,7 @@ interface TutorialRelease {
 export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { user, logout } = useAuth();
 
   const { data: releases = [], isLoading } = useQuery<TutorialRelease[]>({
@@ -55,7 +55,7 @@ export default function Dashboard() {
       release.clientCpf.includes(searchTerm) ||
       release.companyName.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = !statusFilter || release.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || release.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -235,7 +235,7 @@ export default function Dashboard() {
                   <SelectValue placeholder="Todos os Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os Status</SelectItem>
+                  <SelectItem value="all">Todos os Status</SelectItem>
                   <SelectItem value="active">Ativos</SelectItem>
                   <SelectItem value="expired">Expirados</SelectItem>
                   <SelectItem value="pending">Pendentes</SelectItem>
