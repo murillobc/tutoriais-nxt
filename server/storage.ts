@@ -112,6 +112,7 @@ export class DatabaseStorage implements IStorage {
       clientEmail: release.clientEmail,
       clientPhone: release.clientPhone,
       companyName: release.companyName,
+      companyDocument: release.companyDocument,
       companyRole: release.companyRole,
       tutorialIds: release.tutorialIds,
       status: 'pending' as const
