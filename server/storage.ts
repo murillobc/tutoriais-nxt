@@ -88,7 +88,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTutorials(): Promise<Tutorial[]> {
-    return await db.select().from(tutorials).where(eq(tutorials.isActive, true));
+    return await db.select().from(tutorials);
   }
 
   async getTutorialsByIds(ids: string[]): Promise<Tutorial[]> {
@@ -105,9 +105,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease> {
+    const releaseData = {
+      userId: release.userId,
+      clientName: release.clientName,
+      clientCpf: release.clientCpf,
+      clientEmail: release.clientEmail,
+      clientPhone: release.clientPhone,
+      companyName: release.companyName,
+      companyRole: release.companyRole,
+      tutorialIds: release.tutorialIds,
+      status: 'pending' as const
+    };
+    
     const [tutorialRelease] = await db
       .insert(tutorialReleases)
-      .values(release)
+      .values(releaseData)
       .returning();
     return tutorialRelease;
   }

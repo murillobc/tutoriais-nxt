@@ -27,9 +27,8 @@ export const tutorials = pgTable("tutorials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  category: text("category").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  tag: text("tag").notNull(),
+  idCademi: integer("id_cademi").notNull(),
 });
 
 export const tutorialReleases = pgTable("tutorial_releases", {
@@ -42,7 +41,7 @@ export const tutorialReleases = pgTable("tutorial_releases", {
   companyName: text("company_name").notNull(),
   companyRole: text("company_role").notNull(),
   tutorialIds: jsonb("tutorial_ids").notNull().$type<string[]>(),
-  status: text("status").default("active").notNull(), // active, expired, pending
+  status: text("status").default("pending").notNull(), // pending, success, failed
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -72,13 +71,11 @@ export const insertVerificationCodeSchema = createInsertSchema(verificationCodes
 
 export const insertTutorialSchema = createInsertSchema(tutorials).omit({
   id: true,
-  createdAt: true,
 });
 
 export const insertTutorialReleaseSchema = createInsertSchema(tutorialReleases).omit({
   id: true,
   createdAt: true,
-  status: true,
 });
 
 // Types

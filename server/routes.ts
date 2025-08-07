@@ -312,7 +312,8 @@ async function sendTutorialReleaseWebhook(release: any, releaseData: any) {
       id: tutorial.id,
       name: tutorial.name,
       description: tutorial.description,
-      category: tutorial.category
+      tag: tutorial.tag,
+      idCademi: tutorial.idCademi
     })),
     createdAt: release.createdAt,
     status: "pending"

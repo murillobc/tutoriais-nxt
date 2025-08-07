@@ -27,7 +27,8 @@ interface Tutorial {
   id: string;
   name: string;
   description: string;
-  category: string;
+  tag: string;
+  idCademi: number;
 }
 
 interface TutorialReleaseModalProps {
@@ -83,7 +84,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
     tutorial =>
       tutorial.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tutorial.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tutorial.category.toLowerCase().includes(searchTerm.toLowerCase())
+      tutorial.tag.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toggleTutorial = (tutorialId: string) => {
@@ -277,7 +278,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                       </div>
                       <p className="text-gray-600 text-xs mb-3 line-clamp-2">{tutorial.description}</p>
                       <span className="px-2 py-1 bg-nextest-blue/10 text-nextest-blue text-xs rounded-full">
-                        {tutorial.category}
+                        {tutorial.tag}
                       </span>
                     </div>
                   ))}
