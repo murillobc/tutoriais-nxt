@@ -13,13 +13,18 @@ import {
   PlayCircle,
   Building,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { TutorialReleaseModal } from "@/components/TutorialReleaseModal";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { TableCell } from "@/components/ui/table";
+
 
 interface TutorialRelease {
   id: string;
@@ -44,19 +49,54 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { user, logout } = useAuth();
+  const { toast } = useToast();
 
-  const { data: releases = [], isLoading } = useQuery<TutorialRelease[]>({
+  const { data: releases = [], isLoading, refetch: refetchReleases } = useQuery<TutorialRelease[]>({
     queryKey: ["/api/tutorial-releases"],
   });
+
+  const handleUpdateStatus = async (releaseId: string, status: string) => {
+    try {
+      const response = await fetch(`/api/tutorial-releases/${releaseId}/status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status,
+          message: "Status atualizado via interface - teste manual"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar status");
+      }
+
+      // Refetch the releases to show updated status
+      refetchReleases();
+
+      toast({
+        title: "Status atualizado",
+        description: `Tutorial marcado como ${status === "success" ? "sucesso" : "falha"}`,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredReleases = releases.filter(release => {
     const matchesSearch = 
       release.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       release.clientCpf.includes(searchTerm) ||
       release.companyName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || release.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -75,13 +115,17 @@ export default function Dashboard() {
     const statusClasses = {
       active: "bg-green-100 text-green-800",
       pending: "bg-yellow-100 text-yellow-800",
-      expired: "bg-red-100 text-red-800"
+      expired: "bg-red-100 text-red-800",
+      success: "bg-green-100 text-green-800", // Added for success status
+      failed: "bg-red-100 text-red-800"      // Added for failed status
     };
-    
+
     const statusLabels = {
       active: "Ativo",
       pending: "Pendente", 
-      expired: "Expirado"
+      expired: "Expirado",
+      success: "Sucesso",
+      failed: "Falha"
     };
 
     return (
@@ -115,7 +159,7 @@ export default function Dashboard() {
               />
               <h1 className="text-xl font-semibold text-nextest-dark">Portal de Tutoriais</h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
@@ -139,7 +183,7 @@ export default function Dashboard() {
 
       {/* Main Dashboard Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="glass-card rounded-xl p-6 border border-white/20">
@@ -201,7 +245,7 @@ export default function Dashboard() {
             <Plus className="mr-2 h-4 w-4" />
             Nova Liberação de Tutorial
           </Button>
-          
+
           <Button
             variant="outline"
             className="sm:w-auto bg-white/20 backdrop-blur border-white/30 hover:bg-white/30"
@@ -228,7 +272,7 @@ export default function Dashboard() {
                   data-testid="input-search"
                 />
               </div>
-              
+
               {/* Filter Dropdown */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40 bg-white/50" data-testid="select-status-filter">
@@ -239,6 +283,8 @@ export default function Dashboard() {
                   <SelectItem value="active">Ativos</SelectItem>
                   <SelectItem value="expired">Expirados</SelectItem>
                   <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="success">Sucesso</SelectItem>
+                  <SelectItem value="failed">Falha</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -260,7 +306,7 @@ export default function Dashboard() {
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Tutoriais</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Data</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Ações</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Responsável</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -294,22 +340,41 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-600">{formatDate(release.createdAt)}</p>
                         <p className="text-xs text-gray-500">{formatTime(release.createdAt)}</p>
                       </td>
-                      <td className="py-4 px-4">
-                        {getStatusBadge(release.status)}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm" data-testid={`button-view-${release.id}`}>
-                            <Eye className="h-4 w-4 text-nextest-blue" />
-                          </Button>
-                          <Button variant="ghost" size="sm" data-testid={`button-edit-${release.id}`}>
-                            <Edit className="h-4 w-4 text-gray-600" />
-                          </Button>
-                          <Button variant="ghost" size="sm" data-testid={`button-delete-${release.id}`}>
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              release.status === "success"
+                                ? "default"
+                                : release.status === "failed"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {release.status === "success"
+                              ? "Sucesso"
+                              : release.status === "failed"
+                              ? "Falha"
+                              : "Pendente"}
+                          </Badge>
+                          {release.status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateStatus(release.id, "success")}
+                              className="h-6 px-2 text-xs"
+                            >
+                              ✓ Marcar como Sucesso
+                            </Button>
+                          )}
                         </div>
-                      </td>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <User className="h-4 w-4" />
+                          <span>{release.user.name}</span>
+                        </div>
+                      </TableCell>
                     </tr>
                   ))}
                 </tbody>
