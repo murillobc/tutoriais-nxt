@@ -39,6 +39,7 @@ export const tutorialReleases = pgTable("tutorial_releases", {
   clientEmail: text("client_email").notNull(),
   clientPhone: text("client_phone"),
   companyName: text("company_name").notNull(),
+  companyDocument: text("company_document").notNull(), // CNPJ da empresa
   companyRole: text("company_role").notNull(),
   tutorialIds: jsonb("tutorial_ids").notNull().$type<string[]>(),
   status: text("status").default("pending").notNull(), // pending, success, failed

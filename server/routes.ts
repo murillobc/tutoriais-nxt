@@ -46,6 +46,7 @@ const tutorialReleaseSchema = z.object({
   clientEmail: z.string().email(),
   clientPhone: z.string().optional(),
   companyName: z.string().min(1),
+  companyDocument: z.string().min(14, "CNPJ é obrigatório"),
   companyRole: z.string().min(1),
   tutorialIds: z.array(z.string()).min(1)
 });
@@ -305,6 +306,7 @@ async function sendTutorialReleaseWebhook(release: any, releaseData: any) {
       phone: releaseData.clientPhone || null,
       company: {
         name: releaseData.companyName,
+        document: releaseData.companyDocument,
         role: releaseData.companyRole
       }
     },

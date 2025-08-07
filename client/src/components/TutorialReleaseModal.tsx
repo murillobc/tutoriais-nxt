@@ -17,6 +17,7 @@ const tutorialReleaseSchema = z.object({
   clientEmail: z.string().email("Email inválido"),
   clientPhone: z.string().optional(),
   companyName: z.string().min(1, "Nome da empresa é obrigatório"),
+  companyDocument: z.string().min(14, "CNPJ é obrigatório"),
   companyRole: z.string().min(1, "Cargo é obrigatório"),
   tutorialIds: z.array(z.string()).min(1, "Selecione pelo menos um tutorial"),
 });
@@ -50,6 +51,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
       clientEmail: "",
       clientPhone: "",
       companyName: "",
+      companyDocument: "",
       companyRole: "",
       tutorialIds: [],
     },
@@ -209,6 +211,19 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                   )}
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="companyDocument">CNPJ *</Label>
+                  <InputMask
+                    id="companyDocument"
+                    mask="cnpj"
+                    placeholder="00.000.000/0000-00"
+                    {...form.register("companyDocument")}
+                    data-testid="input-company-document"
+                  />
+                  {form.formState.errors.companyDocument && (
+                    <p className="text-sm text-red-500">{form.formState.errors.companyDocument.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="companyRole">Cargo *</Label>
                   <Input
                     id="companyRole"
