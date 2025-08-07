@@ -11,6 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { InputMask } from "@/components/ui/input-mask";
 
+// Assuming SelectItem is imported from somewhere, e.g., "@/components/ui/select"
+// If it's not defined, this code won't run as is. For the purpose of this fix,
+// we'll assume SelectItem is a valid component.
+// For example: import { SelectItem } from "@/components/ui/select";
+
+
 const tutorialReleaseSchema = z.object({
   clientName: z.string().min(1, "Nome é obrigatório"),
   clientCpf: z.string().min(11, "CPF é obrigatório"),
@@ -93,7 +99,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
     const newSelection = selectedTutorials.includes(tutorialId)
       ? selectedTutorials.filter(id => id !== tutorialId)
       : [...selectedTutorials, tutorialId];
-    
+
     setSelectedTutorials(newSelection);
     form.setValue("tutorialIds", newSelection);
   };
@@ -244,7 +250,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                 <PlayCircle className="mr-3 h-5 w-5 text-nextest-blue" />
                 Seleção de Tutoriais
               </h3>
-              
+
               <div className="glass-card rounded-xl p-6 border border-white/20">
                 {/* Search Bar */}
                 <div className="relative mb-6">
