@@ -10,11 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { InputMask } from "@/components/ui/input-mask";
-
-// Assuming SelectItem is imported from somewhere, e.g., "@/components/ui/select"
-// If it's not defined, this code won't run as is. For the purpose of this fix,
-// we'll assume SelectItem is a valid component.
-// For example: import { SelectItem } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const tutorialReleaseSchema = z.object({
@@ -69,7 +65,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
   });
 
   const createReleaseMutation = useMutation({
-    mutationFn: (data: TutorialReleaseForm) => 
+    mutationFn: (data: TutorialReleaseForm) =>
       apiRequest("POST", "/api/tutorial-releases", data),
     onSuccess: () => {
       toast({
@@ -231,12 +227,21 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="companyRole">Cargo *</Label>
-                  <Input
-                    id="companyRole"
-                    placeholder="Seu cargo na empresa"
-                    {...form.register("companyRole")}
-                    data-testid="input-company-role"
-                  />
+                  <Select
+                    onValueChange={(value) => form.setValue("companyRole", value)}
+                    defaultValue={form.getValues("companyRole")}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-company-role">
+                      <SelectValue placeholder="Selecione um cargo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="" disabled>Selecione um cargo</SelectItem>
+                      <SelectItem value="Desenvolvedor">Desenvolvedor</SelectItem>
+                      <SelectItem value="Gerente">Gerente</SelectItem>
+                      <SelectItem value="Analista">Analista</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {form.formState.errors.companyRole && (
                     <p className="text-sm text-red-500">{form.formState.errors.companyRole.message}</p>
                   )}
@@ -288,8 +293,8 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                       <div className="flex items-start justify-between mb-3">
                         <h4 className="font-semibold text-nextest-dark text-sm">{tutorial.name}</h4>
                         <div className={`tutorial-status w-5 h-5 border-2 rounded flex items-center justify-center ${
-                          selectedTutorials.includes(tutorial.id) 
-                            ? 'bg-nextest-green border-nextest-green' 
+                          selectedTutorials.includes(tutorial.id)
+                            ? 'bg-nextest-green border-nextest-green'
                             : 'border-gray-200'
                         }`}>
                           {selectedTutorials.includes(tutorial.id) && (
