@@ -55,39 +55,7 @@ export default function Dashboard() {
     queryKey: ["/api/tutorial-releases"],
   });
 
-  const handleUpdateStatus = async (releaseId: string, status: string) => {
-    try {
-      const response = await fetch(`/api/tutorial-releases/${releaseId}/status`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status,
-          message: "Status atualizado via interface - teste manual"
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao atualizar status");
-      }
-
-      // Refetch the releases to show updated status
-      refetchReleases();
-
-      toast({
-        title: "Status atualizado",
-        description: `Tutorial marcado como ${status === "success" ? "sucesso" : "falha"}`,
-      });
-    } catch (error) {
-      console.error("Erro ao atualizar status:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar o status",
-        variant: "destructive",
-      });
-    }
-  };
+  
 
   const filteredReleases = releases.filter(release => {
     const matchesSearch = 
@@ -340,35 +308,9 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-600">{formatDate(release.createdAt)}</p>
                         <p className="text-xs text-gray-500">{formatTime(release.createdAt)}</p>
                       </td>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              release.status === "success"
-                                ? "default"
-                                : release.status === "failed"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {release.status === "success"
-                              ? "Sucesso"
-                              : release.status === "failed"
-                              ? "Falha"
-                              : "Pendente"}
-                          </Badge>
-                          {release.status === "pending" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUpdateStatus(release.id, "success")}
-                              className="h-6 px-2 text-xs"
-                            >
-                              ✓ Marcar como Sucesso
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                      <td className="py-4 px-4">
+                        {getStatusBadge(release.status)}
+                      </td>
                       <TableCell>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
                           <User className="h-4 w-4" />
