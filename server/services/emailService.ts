@@ -21,8 +21,11 @@ const emailConfig: EmailConfig & { tls?: any; authMethod?: string } = {
   },
   // Additional configuration for better delivery
   tls: {
-    rejectUnauthorized: false // Accept self-signed certificates
-  }
+    rejectUnauthorized: false, // Accept self-signed certificates
+    ciphers: 'SSLv3'
+  },
+  requireTLS: port !== 465,
+  authMethod: 'PLAIN'
 };
 
 // Email service is configured
