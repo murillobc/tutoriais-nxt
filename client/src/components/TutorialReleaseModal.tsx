@@ -135,7 +135,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
             <div className="form-section">
               <h3 className="text-lg font-semibold text-nextest-dark mb-4 flex items-center">
                 <User className="mr-3 h-5 w-5 text-nextest-blue" />
-                Dados Pessoais
+                Dados do Cliente
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
