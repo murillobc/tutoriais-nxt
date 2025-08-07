@@ -235,7 +235,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                       <SelectValue placeholder="Selecione um cargo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="" disabled>Selecione um cargo</SelectItem>
+                      <SelectItem value="placeholder" disabled>Selecione um cargo</SelectItem>
                       <SelectItem value="Desenvolvedor">Desenvolvedor</SelectItem>
                       <SelectItem value="Gerente">Gerente</SelectItem>
                       <SelectItem value="Analista">Analista</SelectItem>
