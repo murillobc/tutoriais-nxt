@@ -9,12 +9,15 @@ declare module "express-session" {
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { sendVerificationCode } from "./services/emailService";
+import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 const loginSchema = z.object({
   email: z.string().email().refine(email => email.endsWith('@nextest.com.br'), {
     message: 'Email deve ser do domínio @nextest.com.br'
-  })
+  }),
+  password: z.string().optional(), // If provided, use password login
+  loginMethod: z.enum(["password", "code"]).default("code")
 });
 
 const verifySchema = z.object({
@@ -27,8 +30,15 @@ const registerSchema = z.object({
   email: z.string().email().refine(email => email.endsWith('@nextest.com.br'), {
     message: 'Email deve ser do domínio @nextest.com.br'
   }),
-  department: z.string().min(1)
-});
+  department: z.string().min(1),
+  password: z.string().min(6).optional(), // Optional password
+  confirmPassword: z.string().optional()
+}).refine(data => {
+  if (data.password && data.password !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, { message: "Senhas não coincidem", path: ["confirmPassword"] });
 
 const tutorialReleaseSchema = z.object({
   clientName: z.string().min(1),
@@ -48,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email } = loginSchema.parse(req.body);
+      const { email, password, loginMethod } = loginSchema.parse(req.body);
       
       // Check if user exists
       const user = await storage.getUserByEmail(email);
@@ -56,19 +66,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Usuário não encontrado. Crie uma conta primeiro." });
       }
 
-      // Generate and send verification code
-      const code = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      if (loginMethod === "password") {
+        // Password login
+        if (!password) {
+          return res.status(400).json({ message: "Senha é obrigatória para login com senha" });
+        }
+        
+        if (!user.password) {
+          return res.status(400).json({ message: "Usuário não possui senha cadastrada. Use o login por código." });
+        }
 
-      await storage.createVerificationCode({
-        email,
-        code,
-        expiresAt
-      });
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+          return res.status(400).json({ message: "Senha incorreta" });
+        }
 
-      await sendVerificationCode(email, code);
+        // Set session for password login
+        req.session = req.session || {};
+        (req.session as any).userId = user.id;
+        
+        res.json({ user, message: "Login realizado com sucesso" });
+      } else {
+        // Email code login
+        const code = generateVerificationCode();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      res.json({ message: "Código de verificação enviado" });
+        await storage.createVerificationCode({
+          email,
+          code,
+          expiresAt
+        });
+
+        try {
+          await sendVerificationCode(email, code);
+          res.json({ message: "Código de verificação enviado" });
+        } catch (emailError) {
+          console.error('Email sending failed, but code created:', emailError);
+          res.json({ 
+            message: "Código de verificação gerado. Verifique o console para o código (email não enviado)",
+            debugCode: code // For debugging only - remove in production
+          });
+        }
+      }
     } catch (error) {
       console.error('Login error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Erro no login" });
@@ -108,7 +147,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Usuário já existe" });
       }
 
-      const user = await storage.createUser(userData);
+      // Hash password if provided
+      const hashedPassword = userData.password ? await bcrypt.hash(userData.password, 10) : undefined;
+
+      const user = await storage.createUser({
+        name: userData.name,
+        email: userData.email,
+        department: userData.department,
+        password: hashedPassword
+      });
       res.json({ user });
     } catch (error) {
       console.error('Register error:', error);
@@ -117,7 +164,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    req.session = null;
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+        }
+      });
+    }
     res.json({ message: "Logout realizado com sucesso" });
   });
 

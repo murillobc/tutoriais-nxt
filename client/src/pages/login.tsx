@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, User, Building, ArrowLeft } from "lucide-react";
+import { Mail, User, Building, ArrowLeft, Key, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,9 @@ const loginSchema = z.object({
   email: z.string().email("Email inválido").refine(
     email => email.endsWith('@nextest.com.br'),
     "Email deve ser do domínio @nextest.com.br"
-  )
+  ),
+  password: z.string().optional(),
+  loginMethod: z.enum(["password", "code"]).default("code")
 });
 
 const verifySchema = z.object({
@@ -27,24 +29,39 @@ const registerSchema = z.object({
     email => email.endsWith('@nextest.com.br'),
     "Email deve ser do domínio @nextest.com.br"
   ),
-  department: z.string().min(1, "Departamento é obrigatório")
-});
+  department: z.string().min(1, "Departamento é obrigatório"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional(),
+  confirmPassword: z.string().optional()
+}).refine(data => {
+  if (data.password && data.password !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, { message: "Senhas não coincidem", path: ["confirmPassword"] });
 
 type LoginForm = z.infer<typeof loginSchema>;
 type VerifyForm = z.infer<typeof verifySchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
 
 type Screen = 'login' | 'verification' | 'register';
+type LoginMethod = 'password' | 'code';
 
 export default function Login() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
   const [userEmail, setUserEmail] = useState('');
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('code');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, verify, register } = useAuth();
   const { toast } = useToast();
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '' }
+    defaultValues: { 
+      email: '',
+      password: '',
+      loginMethod: 'code'
+    }
   });
 
   const verifyForm = useForm<VerifyForm>({
@@ -54,18 +71,40 @@ export default function Login() {
 
   const registerForm = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', email: '', department: '' }
+    defaultValues: { 
+      name: '', 
+      email: '', 
+      department: '', 
+      password: '',
+      confirmPassword: ''
+    }
   });
 
   const onLogin = async (data: LoginForm) => {
     try {
-      await login(data.email);
-      setUserEmail(data.email);
-      setCurrentScreen('verification');
-      toast({
-        title: "Código enviado!",
-        description: "Verifique seu email para o código de verificação."
+      const response = await login({
+        email: data.email,
+        password: data.password,
+        loginMethod: data.loginMethod || loginMethod
       });
+      
+      if (data.loginMethod === 'password' && response.user) {
+        // Direct login with password
+        toast({
+          title: "Login realizado!",
+          description: "Bem-vindo ao Portal de Tutoriais."
+        });
+      } else {
+        // Code verification needed
+        setUserEmail(data.email);
+        setCurrentScreen('verification');
+        toast({
+          title: "Código enviado!",
+          description: response.debugCode ? 
+            `Código: ${response.debugCode} (problema com email)` : 
+            "Verifique seu email para o código de verificação."
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -93,10 +132,18 @@ export default function Login() {
 
   const onRegister = async (data: RegisterForm) => {
     try {
-      await register(data.name, data.email, data.department);
+      await register({
+        name: data.name,
+        email: data.email,
+        department: data.department,
+        password: data.password,
+        confirmPassword: data.confirmPassword
+      });
       toast({
         title: "Conta criada!",
-        description: "Agora você pode fazer login."
+        description: data.password ? 
+          "Agora você pode fazer login com senha." :
+          "Agora você pode fazer login."
       });
       setCurrentScreen('login');
     } catch (error: any) {
@@ -120,6 +167,45 @@ export default function Login() {
         <p className="text-gray-600 text-sm">Faça login para acessar o sistema de liberação</p>
       </div>
 
+      {/* Login Method Toggle */}
+      <div className="mb-6">
+        <Label className="text-sm font-medium text-gray-700 mb-3 block">Como deseja fazer login?</Label>
+        <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-lg">
+          <button
+            type="button"
+            onClick={() => {
+              setLoginMethod('code');
+              loginForm.setValue('loginMethod', 'code');
+            }}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              loginMethod === 'code' 
+                ? 'bg-white text-nextest-blue shadow-sm' 
+                : 'text-gray-600 hover:text-nextest-blue'
+            }`}
+            data-testid="button-login-code"
+          >
+            <Mail className="inline w-4 h-4 mr-2" />
+            Código por Email
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setLoginMethod('password');
+              loginForm.setValue('loginMethod', 'password');
+            }}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              loginMethod === 'password' 
+                ? 'bg-white text-nextest-blue shadow-sm' 
+                : 'text-gray-600 hover:text-nextest-blue'
+            }`}
+            data-testid="button-login-password"
+          >
+            <Key className="inline w-4 h-4 mr-2" />
+            Senha
+          </button>
+        </div>
+      </div>
+
       <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email Corporativo</Label>
@@ -135,13 +221,48 @@ export default function Login() {
           )}
         </div>
 
+        {loginMethod === 'password' && (
+          <div className="space-y-2">
+            <Label htmlFor="password">Senha</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Sua senha"
+                {...loginForm.register("password")}
+                data-testid="input-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                data-testid="button-toggle-password"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {loginForm.formState.errors.password && (
+              <p className="text-sm text-red-500">{loginForm.formState.errors.password.message}</p>
+            )}
+          </div>
+        )}
+
         <Button 
           type="submit" 
           className="w-full gradient-button text-white hover:scale-[1.02] transition-all duration-300"
           data-testid="button-login"
         >
-          <Mail className="mr-2 h-4 w-4" />
-          Enviar Código de Acesso
+          {loginMethod === 'password' ? (
+            <>
+              <Key className="mr-2 h-4 w-4" />
+              Entrar com Senha
+            </>
+          ) : (
+            <>
+              <Mail className="mr-2 h-4 w-4" />
+              Enviar Código de Acesso
+            </>
+          )}
         </Button>
       </form>
 
@@ -264,6 +385,62 @@ export default function Login() {
           {registerForm.formState.errors.department && (
             <p className="text-sm text-red-500">{registerForm.formState.errors.department.message}</p>
           )}
+        </div>
+
+        {/* Password Fields (Optional) */}
+        <div className="space-y-4 pt-2 border-t border-gray-200">
+          <div className="text-center">
+            <Label className="text-sm text-gray-600">Senha (Opcional)</Label>
+            <p className="text-xs text-gray-500 mt-1">Se não definir senha, usará código por email</p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="registerPassword">Senha</Label>
+            <div className="relative">
+              <Input
+                id="registerPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Mínimo 6 caracteres (opcional)"
+                {...registerForm.register("password")}
+                data-testid="input-register-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                data-testid="button-toggle-register-password"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {registerForm.formState.errors.password && (
+              <p className="text-sm text-red-500">{registerForm.formState.errors.password.message}</p>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Repita a senha"
+                {...registerForm.register("confirmPassword")}
+                data-testid="input-confirm-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                data-testid="button-toggle-confirm-password"
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {registerForm.formState.errors.confirmPassword && (
+              <p className="text-sm text-red-500">{registerForm.formState.errors.confirmPassword.message}</p>
+            )}
+          </div>
         </div>
 
         <Button 

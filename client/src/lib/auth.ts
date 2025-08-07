@@ -11,6 +11,8 @@ export interface User {
 
 export interface LoginRequest {
   email: string;
+  password?: string;
+  loginMethod?: 'password' | 'code';
 }
 
 export interface VerifyRequest {
@@ -22,6 +24,8 @@ export interface RegisterRequest {
   name: string;
   email: string;
   department: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 export const auth = {

@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { auth, type User } from "@/lib/auth";
+import { auth, type User, type LoginRequest, type RegisterRequest } from "@/lib/auth";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string) => Promise<void>;
+  login: (data: LoginRequest) => Promise<any>;
   verify: (email: string, code: string) => Promise<void>;
-  register: (name: string, email: string, department: string) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -29,8 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [currentUser]);
 
   const loginMutation = useMutation({
-    mutationFn: (email: string) => auth.login({ email }),
-    onSuccess: () => {
+    mutationFn: (data: LoginRequest) => auth.login(data),
+    onSuccess: (response) => {
+      if (response.user) {
+        setUser(response.user);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
@@ -45,8 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const registerMutation = useMutation({
-    mutationFn: ({ name, email, department }: { name: string; email: string; department: string }) =>
-      auth.register({ name, email, department }),
+    mutationFn: (data: RegisterRequest) => auth.register(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
@@ -63,10 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     isLoading,
-    login: (email: string) => loginMutation.mutateAsync(email),
+    login: (data: LoginRequest) => loginMutation.mutateAsync(data),
     verify: (email: string, code: string) => verifyMutation.mutateAsync({ email, code }),
-    register: (name: string, email: string, department: string) => 
-      registerMutation.mutateAsync({ name, email, department }),
+    register: (data: RegisterRequest) => registerMutation.mutateAsync(data),
     logout: () => logoutMutation.mutateAsync(),
   };
 

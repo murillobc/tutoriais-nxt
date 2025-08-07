@@ -100,7 +100,7 @@ export class DatabaseStorage implements IStorage {
   async createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease> {
     const [tutorialRelease] = await db
       .insert(tutorialReleases)
-      .values([release])
+      .values(release)
       .returning();
     return tutorialRelease;
   }

@@ -25,14 +25,7 @@ const emailConfig: EmailConfig & { tls?: any; authMethod?: string } = {
   }
 };
 
-// Debug logging to identify the issue
-console.log('Email Configuration Debug:');
-console.log('SMTP_HOST:', process.env.SMTP_HOST);
-console.log('SMTP_PORT:', process.env.SMTP_PORT);
-console.log('SMTP_SECURE:', port === 465);
-console.log('SMTP_USER:', process.env.SMTP_USER ? 'SET' : 'NOT SET');
-console.log('SMTP_PASS:', process.env.SMTP_PASS ? 'SET' : 'NOT SET');
-console.log('SMTP_FROM:', process.env.SMTP_FROM);
+// Email service is configured
 
 const transporter = nodemailer.createTransport(emailConfig);
 
@@ -47,9 +40,6 @@ transporter.verify((error, success) => {
 
 export async function sendVerificationCode(email: string, code: string): Promise<void> {
   try {
-    console.log(`📧 Attempting to send verification code to: ${email}`);
-    console.log(`🔑 Verification code: ${code}`);
-    
     const mailOptions = {
       from: process.env.SMTP_FROM || 'Portal Nextest <noreply@nextest.com.br>',
       to: email,
@@ -87,25 +77,10 @@ export async function sendVerificationCode(email: string, code: string): Promise
       text: `Código de Verificação: ${code}\n\nUse este código para acessar o Portal de Tutoriais Nextest.\n\nEste código é válido por 10 minutos.`
     };
 
-    console.log(`📬 Mail options configured:`);
-    console.log(`   From: ${mailOptions.from}`);
-    console.log(`   To: ${mailOptions.to}`);
-    console.log(`   Subject: ${mailOptions.subject}`);
-    
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully!`);
-    console.log(`📋 Message info:`, {
-      messageId: info.messageId,
-      response: info.response,
-      envelope: info.envelope
-    });
+    await transporter.sendMail(mailOptions);
     
   } catch (error) {
-    console.error('❌ Email sending error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
-    });
+    console.error('Email sending failed:', error instanceof Error ? error.message : 'Unknown error');
     throw new Error(`Falha ao enviar email: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
