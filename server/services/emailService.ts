@@ -42,6 +42,14 @@ transporter.verify((error, success) => {
 });
 
 export async function sendVerificationCode(email: string, code: string): Promise<void> {
+  console.log('📧 Tentando enviar email para:', email);
+  console.log('🔧 Config SMTP:', {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || '587',
+    user: process.env.SMTP_USER || 'não configurado',
+    from: process.env.SMTP_FROM || 'Portal Nextest <noreply@nextest.com.br>'
+  });
+  
   try {
     const mailOptions = {
       from: process.env.SMTP_FROM || 'Portal Nextest <noreply@nextest.com.br>',
@@ -80,7 +88,10 @@ export async function sendVerificationCode(email: string, code: string): Promise
       text: `Código de Verificação: ${code}\n\nUse este código para acessar o Portal de Tutoriais Nextest.\n\nEste código é válido por 10 minutos.`
     };
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Email enviado com sucesso!');
+    console.log('📧 Message ID:', info.messageId);
+    console.log('📧 Response:', info.response);
     
   } catch (error) {
     console.error('Email sending failed:', error instanceof Error ? error.message : 'Unknown error');
