@@ -28,7 +28,8 @@ services:
         git clone https://github.com/murillobc/tutoriais-nxt.git /tmp/app &&
         cp -r /tmp/app/* . &&
         npm ci &&
-        npm run build &&
+        npx vite build &&
+        npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist &&
         npm prune --production &&
         node dist/index.js
       "
