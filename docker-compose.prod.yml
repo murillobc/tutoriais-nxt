@@ -27,8 +27,9 @@ services:
         rm -rf /tmp/app &&
         git clone https://github.com/murillobc/tutoriais-nxt.git /tmp/app &&
         cp -r /tmp/app/* . &&
-        npm ci --only=production &&
+        npm ci &&
         npm run build &&
+        npm prune --production &&
         node dist/index.js
       "
     restart: always
