@@ -1,46 +1,51 @@
-# docker-compose.prod.yml
 version: '3.8'
 
 services:
   # Aplicação principal
   nextest-app:
+    image: nextest-tutorials:latest
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nextest-tutorials-app
     environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:cQM6q7g505tP@postgres_tuto_nxt_postgres:5432/postgres
-      SESSION_SECRET: ${SESSION_SECRET}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM: ${SMTP_FROM}
-      WEBHOOK_URL: ${WEBHOOK_URL}
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:cQM6q7g505tP@postgres_tuto_nxt_postgres:5432/postgres
+      - SESSION_SECRET
+      - SMTP_HOST
+      - SMTP_PORT
+      - SMTP_USER
+      - SMTP_PASS
+      - SMTP_FROM
+      - WEBHOOK_URL
     ports:
       - "3000:3000"
     volumes:
-      - ./logs:/app/logs
-    restart: unless-stopped
+      - nextest-logs:/app/logs
     networks:
       - nextest-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
-  # Redis para cache (opcional)
+  # Redis para cache
   redis:
     image: redis:7-alpine
-    container_name: nextest-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    restart: unless-stopped
     networks:
       - nextest-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
 volumes:
   redis_data:
+  nextest-logs:
 
 networks:
   nextest-network:
-    driver: bridge
+    driver: overlay
