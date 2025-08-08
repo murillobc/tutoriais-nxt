@@ -3,10 +3,8 @@ version: '3.8'
 services:
   # Aplicação principal
   nextest-app:
-    image: nextest-tutorials:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: node:18-alpine
+    working_dir: /app
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:cQM6q7g505tP@postgres_tuto_nxt_postgres:5432/postgres
@@ -21,8 +19,14 @@ services:
       - "3000:3000"
     volumes:
       - nextest-logs:/app/logs
-    networks:
-      - nextest-network
+    command: |
+      sh -c "
+        apk add --no-cache git python3 make g++ &&
+        git clone https://github.com/murillobc/tutoriais-nxt.git . &&
+        npm ci --only=production &&
+        npm run build &&
+        node dist/server/index.js
+      "
     deploy:
       replicas: 1
       restart_policy:
@@ -35,8 +39,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - nextest-network
     deploy:
       replicas: 1
       restart_policy:
@@ -47,5 +49,5 @@ volumes:
   nextest-logs:
 
 networks:
-  nextest-network:
+  default:
     driver: overlay
