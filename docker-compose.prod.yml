@@ -22,7 +22,9 @@ services:
     command: |
       sh -c "
         apk add --no-cache git python3 make g++ &&
-        git clone https://github.com/murillobc/tutoriais-nxt.git . &&
+        rm -rf /tmp/app &&
+        git clone https://github.com/murillobc/tutoriais-nxt.git /tmp/app &&
+        cp -r /tmp/app/* . &&
         npm ci --only=production &&
         npm run build &&
         node dist/server/index.js
