@@ -9,8 +9,10 @@ services:
         apk add --no-cache git python3 make g++ &&
         git clone https://github.com/murillobc/tutoriais-nxt.git . &&
         npm ci &&
+        rm -f vite.config.ts &&
+        rm -f server/vite.ts &&
         npx esbuild server/index.ts --platform=node --bundle --format=esm --outdir=dist &&
-        echo '🚀 Build concluído (bundle completo), iniciando servidor...' &&
+        echo '🚀 Build concluído (sem arquivos de dev), iniciando servidor...' &&
         node dist/index.js
       "
     environment:
