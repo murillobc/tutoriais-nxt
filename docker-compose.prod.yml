@@ -27,11 +27,18 @@ services:
         rm -rf /tmp/app &&
         git clone https://github.com/murillobc/tutoriais-nxt.git /tmp/app &&
         cp -r /tmp/app/* . &&
-        npm ci &&
-        rm -f vite.config.ts &&
-        npm run build &&
-        npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist &&
+        npm install &&
+        echo '🔍 ARQUIVO NOVO - Listando binários instalados:' &&
+        ls -la node_modules/.bin/ &&
+        echo '🔍 Verificando se vite existe:' &&
+        test -f node_modules/.bin/vite && echo '✅ Vite encontrado!' || echo '❌ Vite NÃO encontrado!' &&
+        echo '🔍 Tentando build manual do frontend:' &&
+        node_modules/.bin/vite build client &&
+        echo '🔍 Build do backend:' &&
+        node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist &&
+        echo '🔍 Limpando devDependencies:' &&
         npm prune --production &&
+        echo '🚀 Iniciando aplicação:' &&
         node dist/index.js
       "
     restart: always
