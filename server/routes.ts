@@ -8,7 +8,7 @@ declare module "express-session" {
 }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { sendVerificationCode } from "./services/emailService.js";
+import { sendVerificationCode } from "./services/emailService";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
