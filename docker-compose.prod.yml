@@ -33,7 +33,7 @@ services:
         echo '🔍 Criando mock do vite.ts para produção:' &&
         echo 'import express from \"express\";import fs from \"fs\";import path from \"path\";import{fileURLToPath}from\"url\";const __dirname=path.dirname(fileURLToPath(import.meta.url));export function log(m,s=\"express\"){console.log(new Date().toLocaleTimeString(\"en-US\",{hour:\"numeric\",minute:\"2-digit\",second:\"2-digit\",hour12:true})+\" [\"+s+\"] \"+m);}export async function setupVite(){log(\"Vite skipped in production\",\"docker\");}export function serveStatic(app){const distPath=path.resolve(__dirname,\"public\");if(!fs.existsSync(distPath)){throw new Error(\"Could not find build directory: \"+distPath);}app.use(express.static(distPath));app.use(\"*\",(_req,res)=>{res.sendFile(path.resolve(distPath,\"index.html\"));});}' > server/vite.ts &&
         echo '🔍 Corrigindo driver de database para PostgreSQL tradicional:' &&
-        echo 'import { Pool } from \"pg\";import { drizzle } from \"drizzle-orm/node-postgres\";import * as schema from \"@shared/schema\";if (!process.env.DATABASE_URL) {throw new Error(\"DATABASE_URL must be set. Did you forget to provision a database?\");}export const pool = new Pool({ connectionString: process.env.DATABASE_URL });export const db = drizzle({ client: pool, schema });' > server/db.ts &&
+        echo 'import pkg from \"pg\";const { Pool } = pkg;import { drizzle } from \"drizzle-orm/node-postgres\";import * as schema from \"@shared/schema\";if (!process.env.DATABASE_URL) {throw new Error(\"DATABASE_URL must be set. Did you forget to provision a database?\");}export const pool = new Pool({ connectionString: process.env.DATABASE_URL });export const db = drizzle({ client: pool, schema });' > server/db.ts &&
         echo '🔍 ARQUIVO NOVO - Listando binários instalados:' &&
         ls -la node_modules/.bin/ &&
         echo '🔍 Verificando se vite existe:' &&
@@ -41,7 +41,7 @@ services:
         echo '🔍 Tentando build manual do frontend:' &&
         node_modules/.bin/vite build client --config vite.config.ts &&
         echo '🔍 Build do backend:' &&
-        node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite &&
+        node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite --external:pg &&
         echo '🔍 Limpando devDependencies:' &&
         npm prune --production &&
         echo '🔍 Mudando NODE_ENV para production antes de rodar:' &&
