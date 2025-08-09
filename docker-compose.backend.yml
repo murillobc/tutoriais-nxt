@@ -7,8 +7,10 @@ services:
     command: |
       sh -c "
         apk add --no-cache git python3 make g++ &&
-        rm -rf /app/* /app/.* 2>/dev/null || true &&
-        git clone https://github.com/murillobc/tutoriais-nxt.git . &&
+        cd /tmp &&
+        rm -rf tutoriais-nxt &&
+        git clone https://github.com/murillobc/tutoriais-nxt.git tutoriais-nxt &&
+        cd tutoriais-nxt &&
         npm ci &&
         npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist &&
         echo '🚀 Backend buildado! Iniciando servidor...' &&
@@ -28,7 +30,7 @@ services:
     networks:
       - network_public
     volumes:
-      - nextest_backend_logs:/app/logs
+      - nextest_backend_logs:/tmp/tutoriais-nxt/logs
     deploy:
       labels:
         - traefik.enable=true
