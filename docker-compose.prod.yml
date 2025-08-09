@@ -44,7 +44,8 @@ services:
         npm prune --production &&
         echo '🔍 Mudando NODE_ENV para production antes de rodar:' &&
         export NODE_ENV=production &&
-        echo '🚀 Iniciando aplicação:' &&
+        export PORT=3000 &&
+        echo '🚀 Iniciando aplicação na porta 3000:' &&
         node dist/index.js
       "
     restart: always
