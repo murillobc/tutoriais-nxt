@@ -2,17 +2,16 @@ version: "3.8"
 
 services:
   nextest-backend:
-    build:
-      context: https://github.com/murillobc/tutoriais-nxt.git
-      dockerfile_inline: |
-        FROM node:18-alpine
-        WORKDIR /app
-        RUN apk add --no-cache python3 make g++
-        COPY . .
-        RUN npm ci
-        RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
-        EXPOSE 3000
-        CMD ["node", "dist/index.js"]
+    image: node:18-alpine
+    working_dir: /tmp/app
+    command: |
+      sh -c "
+        apk add --no-cache git python3 make g++ &&
+        git clone https://github.com/murillobc/tutoriais-nxt.git . &&
+        npm ci &&
+        npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist &&
+        node dist/index.js
+      "
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:cQM6q7g505tP@postgres_tuto_nxt_postgres:5432/postgres
