@@ -13,6 +13,7 @@ x-base: &base
     SMTP_USER: ${SMTP_USER}
     SMTP_PASS: ${SMTP_PASS}
     SMTP_FROM: ${SMTP_FROM}
+    SMTP_ADDRESS: ${SMTP_ADDRESS}
     WEBHOOK_URL: ${WEBHOOK_URL}
   networks:
     - network_public
