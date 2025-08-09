@@ -10,6 +10,7 @@ services:
         git clone https://github.com/murillobc/tutoriais-nxt.git . &&
         npm ci &&
         npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist &&
+        echo '🚀 Build concluído, iniciando servidor...' &&
         node dist/index.js
       "
     environment:
