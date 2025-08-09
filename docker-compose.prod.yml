@@ -8,10 +8,10 @@ x-base: &base
     NODE_ENV: production
     DATABASE_URL: postgresql://postgres:cQM6q7g505tP@postgres_tuto_nxt_postgres:5432/postgres
     SESSION_SECRET: ${SESSION_SECRET}
-    SMTP_HOST: ${SMTP_HOST}
+    SMTP_DOMAIN: ${SMTP_DOMAIN}
     SMTP_PORT: ${SMTP_PORT}
-    SMTP_USER: ${SMTP_USER}
-    SMTP_PASS: ${SMTP_PASS}
+    SMTP_USERNAME: ${SMTP_USERNAME}
+    SMTP_PASSWORD: ${SMTP_PASSWORD}
     SMTP_FROM: ${SMTP_FROM}
     SMTP_ADDRESS: ${SMTP_ADDRESS}
     WEBHOOK_URL: ${WEBHOOK_URL}
