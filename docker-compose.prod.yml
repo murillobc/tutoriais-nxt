@@ -59,7 +59,7 @@ services:
     deploy:
       labels:
         - traefik.enable=true
-        - traefik.http.routers.nextest.rule=Host(`tutoriais.automai.com.br`)
+        - traefik.http.routers.nextest.rule=Host(`tutoriais.educanextest.com.br`)
         - traefik.http.routers.nextest.entrypoints=websecure
         - traefik.http.routers.nextest.tls.certresolver=letsencryptresolver
         - traefik.http.services.nextest.loadbalancer.server.port=3000
