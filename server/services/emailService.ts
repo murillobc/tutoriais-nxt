@@ -40,7 +40,7 @@ console.log('🔧 Configurando emailService (padrão Chatwoot) com:', {
   from: process.env.SMTP_FROM || 'Portal Nextest <no-reply@nextest.com.br>'
 });
 
-const transporter = nodemailer.createTransporter(emailConfig);
+const transporter = nodemailer.createTransport(emailConfig);
 
 // Test email connection on startup
 transporter.verify((error, success) => {
