@@ -37,7 +37,7 @@ services:
         echo '🔍 Tentando build manual do frontend:' &&
         node_modules/.bin/vite build client --config vite.config.ts &&
         echo '🔍 Build do backend:' &&
-        node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist &&
+        node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite &&
         echo '🔍 Limpando devDependencies:' &&
         npm prune --production &&
         echo '🔍 Mudando NODE_ENV para production antes de rodar:' &&
