@@ -38,7 +38,7 @@ class EmailService {
 
     try {
       await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || 'noreply@nextest.com.br',
+        from: process.env.EMAIL_FROM || 'no-reply@educanextest.com.br',
         to: email,
         subject: 'Código de Verificação - Portal Nextest',
         html: `
