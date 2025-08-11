@@ -116,11 +116,16 @@ export default function Login() {
 
   const onLogin = async (data: LoginForm) => {
     try {
+      console.log('Login data:', data);
+      console.log('Login method:', data.loginMethod || loginMethod);
+      
       const response = await login({
         email: data.email,
         password: data.password,
         loginMethod: data.loginMethod || loginMethod
       });
+      
+      console.log('Login response:', response);
       
       if (response.user) {
         // Direct login with password - user is authenticated
@@ -130,6 +135,7 @@ export default function Login() {
         });
       } else {
         // Code verification needed - redirect to verification screen
+        console.log('Redirecting to verification screen');
         setUserEmail(data.email);
         setCurrentScreen('verification');
         toast({
@@ -140,6 +146,7 @@ export default function Login() {
         });
       }
     } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         title: "Erro",
         description: error.message,
@@ -252,6 +259,7 @@ export default function Login() {
             onClick={() => {
               setLoginMethod('code');
               loginForm.setValue('loginMethod', 'code');
+              console.log('Switched to code method');
             }}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
               loginMethod === 'code' 
@@ -268,6 +276,7 @@ export default function Login() {
             onClick={() => {
               setLoginMethod('password');
               loginForm.setValue('loginMethod', 'password');
+              console.log('Switched to password method');
             }}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
               loginMethod === 'password' 
@@ -731,6 +740,11 @@ export default function Login() {
 
   return (
     <div className="gradient-bg min-h-screen flex items-center justify-center p-4">
+      {/* Debug indicator */}
+      <div className="fixed top-4 right-4 bg-black text-white px-3 py-1 rounded text-xs">
+        Tela: {currentScreen}
+      </div>
+      
       {currentScreen === 'login' && <LoginScreen />}
       {currentScreen === 'verification' && <VerificationScreen />}
       {currentScreen === 'register' && <RegisterScreen />}
