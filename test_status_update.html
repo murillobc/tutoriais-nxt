@@ -1,27 +1,38 @@
+
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste de Atualização de Status - Tutorial Nextest</title>
+    <title>🎓 Teste API - Atualização Status Tutorial Release</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         .container {
             background: white;
+            border-radius: 15px;
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         h1 {
-            color: #0075C5;
+            color: #333;
             text-align: center;
             margin-bottom: 30px;
+        }
+        .example-urls {
+            background: #f8f9ff;
+            border: 2px solid #e3e8ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            color: #4338ca;
         }
         .form-group {
             margin-bottom: 20px;
@@ -30,104 +41,122 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #333;
+            color: #374151;
         }
-        input[type="text"], select, textarea {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e1e1e1;
-            border-radius: 6px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
             font-size: 16px;
+            transition: border-color 0.3s;
             box-sizing: border-box;
         }
-        input[type="text"]:focus, select:focus, textarea:focus {
-            border-color: #0075C5;
+        input:focus, select:focus, textarea:focus {
             outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         button {
-            background: #60AB4B;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 24px;
             border: none;
-            border-radius: 6px;
+            padding: 15px 25px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             margin-right: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
         }
         button:hover {
-            background: #4a8c3a;
-        }
-        button.danger {
-            background: #dc3545;
-        }
-        button.danger:hover {
-            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         .result {
             margin-top: 20px;
             padding: 15px;
-            border-radius: 6px;
-            font-family: monospace;
+            border-radius: 8px;
             white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 2px solid;
         }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .result.success {
+            background: #f0f9ff;
+            border-color: #0ea5e9;
+            color: #0c4a6e;
         }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .result.error {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #991b1b;
         }
         .code-block {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 25px;
             overflow-x: auto;
         }
-        .example-urls {
-            background: #e7f3ff;
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
             padding: 15px;
-            border-left: 4px solid #0075C5;
-            margin: 20px 0;
+            margin-bottom: 20px;
+            color: #92400e;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎓 Teste de Atualização de Status - Tutorial Nextest</h1>
+        <h1>🎓 Teste de Atualização de Status - Tutorial Release Nextest</h1>
+        
+        <div class="warning">
+            ⚠️ <strong>IMPORTANTE:</strong> Use o ID da LIBERAÇÃO/REQUISIÇÃO, não do tutorial individual!
+            Uma liberação pode conter múltiplos tutoriais.
+        </div>
         
         <div class="example-urls">
-            <strong>📋 Exemplo de IDs de Tutorial Release:</strong><br>
-            • Você pode obter IDs reais acessando o dashboard e copiando da URL ou dos logs<br>
-            • Formato típico: 24727cd9-5d90-4adc-9314-a653b8f41234
+            <strong>📋 Como obter o ID da Liberação:</strong><br>
+            • <strong>Dashboard:</strong> Copie o ID da lista de liberações<br>
+            • <strong>API:</strong> GET /api/tutorial-releases → campo "id"<br>
+            • <strong>Ao criar:</strong> POST /api/tutorial-releases → retorna o ID<br>
+            • <strong>Formato:</strong> 24727cd9-5d90-4adc-9314-a653b8f41234
         </div>
 
         <form id="statusForm">
             <div class="form-group">
-                <label for="tutorialId">ID do Tutorial Release:</label>
-                <input type="text" id="tutorialId" placeholder="Ex: 24727cd9-5d90-4adc-9314-a653b8f41234">
+                <label for="releaseId">ID da Liberação (Tutorial Release):</label>
+                <input type="text" id="releaseId" placeholder="Ex: 24727cd9-5d90-4adc-9314-a653b8f41234">
+                <small style="color: #6b7280; font-size: 12px;">Este ID representa toda a liberação com todos os tutoriais inclusos</small>
             </div>
 
             <div class="form-group">
                 <label for="status">Novo Status:</label>
                 <select id="status">
-                    <option value="success">✅ Success (Liberado)</option>
-                    <option value="pending">⏳ Pending (Pendente)</option>
-                    <option value="failed">❌ Failed (Falha)</option>
+                    <option value="success">✅ Success (Liberação Aprovada)</option>
+                    <option value="pending">⏳ Pending (Liberação Pendente)</option>
+                    <option value="failed">❌ Failed (Liberação Rejeitada)</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="message">Mensagem (opcional):</label>
-                <textarea id="message" rows="3" placeholder="Ex: Tutorial liberado automaticamente pelo sistema externo"></textarea>
+                <textarea id="message" rows="3" placeholder="Ex: Liberação de tutoriais processada com sucesso pelo sistema externo"></textarea>
             </div>
 
-            <button type="button" onclick="updateStatus()">🚀 Atualizar Status</button>
+            <button type="button" onclick="updateStatus()">🚀 Atualizar Status da Liberação</button>
             <button type="button" onclick="generateCurlCommand()" style="background: #17a2b8;">📋 Gerar Comando cURL</button>
         </form>
 
@@ -135,29 +164,24 @@
 
         <div class="code-block">
             <strong>💡 Exemplo de Requisição cURL:</strong>
-            <pre id="curlExample">curl -X POST "http://localhost:5000/api/tutorial-releases/SEU_ID_AQUI/status" \
+            <pre id="curlExample">curl -X POST "http://localhost:5000/api/tutorial-releases/SEU_ID_DA_LIBERACAO/status" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "success",
-    "message": "Tutorial liberado automaticamente"
+    "message": "Liberação processada automaticamente"
   }'</pre>
-        </div>
-
-        <div class="code-block">
-            <strong>🔗 Para usar em produção, substitua:</strong>
-            <pre>http://localhost:5000 → https://seu-dominio.com</pre>
         </div>
     </div>
 
     <script>
         async function updateStatus() {
-            const tutorialId = document.getElementById('tutorialId').value.trim();
+            const releaseId = document.getElementById('releaseId').value.trim();
             const status = document.getElementById('status').value;
             const message = document.getElementById('message').value.trim();
             const resultDiv = document.getElementById('result');
 
-            if (!tutorialId) {
-                showResult('Erro: Por favor, insira o ID do tutorial release', 'error');
+            if (!releaseId) {
+                showResult('Erro: Por favor, insira o ID da liberação (tutorial release)', 'error');
                 return;
             }
 
@@ -167,9 +191,9 @@
             }
 
             try {
-                showResult('🔄 Enviando requisição...', 'success');
+                showResult('🔄 Enviando requisição para atualizar status da liberação...', 'success');
                 
-                const response = await fetch(`http://localhost:5000/api/tutorial-releases/${tutorialId}/status`, {
+                const response = await fetch(`http://localhost:5000/api/tutorial-releases/${releaseId}/status`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -180,9 +204,9 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showResult(`✅ Sucesso!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}`, 'success');
+                    showResult(`✅ Sucesso! Status da liberação atualizado!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}\n\nID da Liberação: ${releaseId}`, 'success');
                 } else {
-                    showResult(`❌ Erro!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}`, 'error');
+                    showResult(`❌ Erro ao atualizar status da liberação!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}`, 'error');
                 }
             } catch (error) {
                 showResult(`❌ Erro de conexão!\n\nErro: ${error.message}\n\nVerifique se o servidor está rodando em http://localhost:5000`, 'error');
@@ -190,7 +214,7 @@
         }
 
         function generateCurlCommand() {
-            const tutorialId = document.getElementById('tutorialId').value.trim() || 'SEU_ID_AQUI';
+            const releaseId = document.getElementById('releaseId').value.trim() || 'SEU_ID_DA_LIBERACAO';
             const status = document.getElementById('status').value;
             const message = document.getElementById('message').value.trim();
 
@@ -199,12 +223,12 @@
                 payload.message = message;
             }
 
-            const curlCommand = `curl -X POST "http://localhost:5000/api/tutorial-releases/${tutorialId}/status" \\
+            const curlCommand = `curl -X POST "http://localhost:5000/api/tutorial-releases/${releaseId}/status" \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(payload)}'`;
 
             document.getElementById('curlExample').textContent = curlCommand;
-            showResult(`📋 Comando cURL gerado e copiado para a seção abaixo!\n\nPara usar em produção, substitua:\nhttp://localhost:5000 → https://seu-dominio.com`, 'success');
+            showResult(`📋 Comando cURL gerado!\n\nPara usar em produção, substitua:\nhttp://localhost:5000 → https://seu-dominio.com\n\nLembre-se: use sempre o ID da LIBERAÇÃO, não do tutorial individual!`, 'success');
         }
 
         function showResult(message, type) {
@@ -216,8 +240,7 @@
         }
 
         // Auto-fill com exemplo se estiver vazio
-        document.getElementById('tutorialId').value = '24727cd9-5d90-4adc-9314-a653b8f41234';
-        document.getElementById('message').value = 'Tutorial liberado automaticamente pelo sistema externo';
+        document.getElementById('releaseId').value = '24727cd9-5d90-4adc-9314-a653b8f41234';
     </script>
 </body>
 </html>

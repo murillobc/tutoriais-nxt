@@ -1,3 +1,4 @@
+
 # API para Atualização de Status de Tutoriais
 
 ## Endpoint
@@ -6,7 +7,13 @@ POST /api/tutorial-releases/:id/status
 ```
 
 ## Parâmetros
-- `:id` - ID do tutorial release que você quer atualizar
+- `:id` - **ID da liberação/requisição** (não do tutorial individual) que você quer atualizar
+
+## Importante
+⚠️ **O ID usado é da LIBERAÇÃO/REQUISIÇÃO, não do tutorial individual**
+- Uma liberação pode conter múltiplos tutoriais
+- Ao atualizar o status, você afeta toda a liberação com todos os tutoriais inclusos
+- O ID da liberação é retornado quando você cria uma nova liberação via POST /api/tutorial-releases
 
 ## Corpo da Requisição (JSON)
 ```json
@@ -25,39 +32,39 @@ POST /api/tutorial-releases/:id/status
 
 ### 1. Com cURL
 ```bash
-curl -X POST "http://localhost:5000/api/tutorial-releases/SEU_ID_AQUI/status" \
+curl -X POST "http://localhost:5000/api/tutorial-releases/24727cd9-5d90-4adc-9314-a653b8f41234/status" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "success",
-    "message": "Tutorial liberado automaticamente pelo sistema"
+    "message": "Liberação de tutoriais processada com sucesso"
   }'
 ```
 
 ### 2. Com JavaScript/Fetch
 ```javascript
-async function liberarTutorial(tutorialReleaseId) {
+async function liberarTutorialRelease(releaseId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/tutorial-releases/${tutorialReleaseId}/status`, {
+    const response = await fetch(`http://localhost:5000/api/tutorial-releases/${releaseId}/status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         status: 'success',
-        message: 'Tutorial liberado pelo sistema externo'
+        message: 'Liberação processada pelo sistema externo'
       })
     });
 
     const result = await response.json();
-    console.log('Status atualizado:', result);
+    console.log('Status da liberação atualizado:', result);
     return result;
   } catch (error) {
-    console.error('Erro ao atualizar status:', error);
+    console.error('Erro ao atualizar status da liberação:', error);
   }
 }
 
 // Exemplo de uso
-liberarTutorial('24727cd9-5d90-4adc-9314-a653...');
+liberarTutorialRelease('24727cd9-5d90-4adc-9314-a653b8f41234');
 ```
 
 ### 3. Com Python
@@ -65,12 +72,12 @@ liberarTutorial('24727cd9-5d90-4adc-9314-a653...');
 import requests
 import json
 
-def liberar_tutorial(tutorial_release_id):
-    url = f"http://localhost:5000/api/tutorial-releases/{tutorial_release_id}/status"
+def liberar_tutorial_release(release_id):
+    url = f"http://localhost:5000/api/tutorial-releases/{release_id}/status"
     
     data = {
         "status": "success",
-        "message": "Tutorial liberado pelo sistema Python"
+        "message": "Liberação de tutoriais processada pelo sistema Python"
     }
     
     response = requests.post(
@@ -80,23 +87,23 @@ def liberar_tutorial(tutorial_release_id):
     )
     
     if response.ok:
-        print("Status atualizado com sucesso:", response.json())
+        print("Status da liberação atualizado:", response.json())
     else:
         print("Erro:", response.status_code, response.text)
 
 # Exemplo de uso
-liberar_tutorial("24727cd9-5d90-4adc-9314-a653...")
+liberar_tutorial_release("24727cd9-5d90-4adc-9314-a653b8f41234")
 ```
 
 ### 4. Com PHP
 ```php
 <?php
-function liberarTutorial($tutorialReleaseId) {
-    $url = "http://localhost:5000/api/tutorial-releases/$tutorialReleaseId/status";
+function liberarTutorialRelease($releaseId) {
+    $url = "http://localhost:5000/api/tutorial-releases/$releaseId/status";
     
     $data = [
         'status' => 'success',
-        'message' => 'Tutorial liberado pelo sistema PHP'
+        'message' => 'Liberação de tutoriais processada pelo sistema PHP'
     ];
     
     $options = [
@@ -111,24 +118,24 @@ function liberarTutorial($tutorialReleaseId) {
     $result = file_get_contents($url, false, $context);
     
     if ($result !== FALSE) {
-        echo "Status atualizado: " . $result;
+        echo "Status da liberação atualizado: " . $result;
     } else {
-        echo "Erro ao atualizar status";
+        echo "Erro ao atualizar status da liberação";
     }
 }
 
 // Exemplo de uso
-liberarTutorial("24727cd9-5d90-4adc-9314-a653...");
+liberarTutorialRelease("24727cd9-5d90-4adc-9314-a653b8f41234");
 ?>
 ```
 
-## Resposta da API
+## Respostas da API
 
 ### Sucesso (200)
 ```json
 {
   "message": "Status atualizado com sucesso",
-  "releaseId": "24727cd9-5d90-4adc-9314-a653...",
+  "releaseId": "24727cd9-5d90-4adc-9314-a653b8f41234",
   "status": "success"
 }
 ```
@@ -140,20 +147,75 @@ liberarTutorial("24727cd9-5d90-4adc-9314-a653...");
 }
 ```
 
-## Como Obter o ID do Tutorial Release
+### Erro (404)
+```json
+{
+  "message": "Liberação não encontrada"
+}
+```
 
-O ID do tutorial release é retornado quando você cria uma nova liberação através do endpoint:
+## Como Obter o ID da Liberação
+
+### 1. Ao criar uma liberação
+O ID é retornado quando você cria uma nova liberação:
+```bash
+curl -X POST "http://localhost:5000/api/tutorial-releases" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientName": "João Silva",
+    "clientCpf": "123.456.789-00",
+    "clientEmail": "joao@empresa.com",
+    "companyName": "Empresa XYZ",
+    "companyDocument": "12.345.678/0001-90",
+    "companyRole": "Desenvolvedor",
+    "tutorialIds": ["tutorial1-id", "tutorial2-id"]
+  }'
+```
+
+**Resposta:**
+```json
+{
+  "id": "24727cd9-5d90-4adc-9314-a653b8f41234",
+  "clientName": "João Silva",
+  "tutorialIds": ["tutorial1-id", "tutorial2-id"],
+  "status": "pending",
+  "createdAt": "2025-01-15T10:30:00Z"
+}
+```
+
+### 2. Listando todas as liberações
+```bash
+curl -X GET "http://localhost:5000/api/tutorial-releases"
+```
+
+## APIs Auxiliares
+
+**Criar nova liberação:**
 ```
 POST /api/tutorial-releases
 ```
 
-Ou você pode listar todas as liberações para encontrar o ID:
+**Listar todas as liberações:**
 ```
 GET /api/tutorial-releases
 ```
 
+**Obter todos os tutoriais disponíveis:**
+```
+GET /api/tutorials
+```
+
+## Fluxo Completo
+
+1. **Criar liberação** → Recebe ID da liberação
+2. **Sistema externo processa** → Trabalha com múltiplos tutoriais
+3. **Atualizar status** → Usa ID da liberação para marcar sucesso/falha
+4. **Dashboard atualizado** → Mostra status da liberação completa
+
 ## URL de Produção
 
-Quando você colocar o sistema em produção, substitua:
-- `http://localhost:5000` pela URL real do seu servidor
-- Por exemplo: `https://seu-dominio.com`
+Quando colocar em produção, substitua `http://localhost:5000` pela URL real do seu servidor.
+
+## Arquivo de Teste
+
+Use o arquivo `test_status_update.html` na raiz do projeto para testar a API diretamente no browser.
