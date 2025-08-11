@@ -129,8 +129,8 @@ export default function Dashboard() {
     return names.join(', ');
   };
 
-  const formatExpirationDate = (date: string | null) => {
-    if (!date) return "Não definida";
+  const formatExpirationDate = (date: string | null | undefined) => {
+    if (!date) return <span className="text-gray-500">Não definida</span>;
     const expDate = new Date(date);
     const now = new Date();
     const isExpired = expDate < now;

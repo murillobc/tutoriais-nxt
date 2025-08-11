@@ -129,7 +129,7 @@ export class DatabaseStorage implements IStorage {
         companyDocument: release.companyDocument,
         companyRole: release.companyRole,
         tutorialIds: release.tutorialIds,
-        status: 'pending'
+        status: release.status || 'pending'
       })
       .returning();
     return tutorialRelease;
@@ -145,7 +145,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllTutorialReleases(): Promise<(TutorialRelease & { user: User })[]> {
     // Verificar e atualizar releases expirados antes de buscar dados
-    await this.checkAndUpdateExpiredReleases();
+    try {
+      await this.checkAndUpdateExpiredReleases();
+    } catch (error) {
+      console.log('Aviso: Verificação de expiração falhou (coluna pode não existir ainda):', error);
+    }
     
     const results = await db
       .select({
@@ -160,7 +164,6 @@ export class DatabaseStorage implements IStorage {
         companyRole: tutorialReleases.companyRole,
         tutorialIds: tutorialReleases.tutorialIds,
         status: tutorialReleases.status,
-        expirationDate: tutorialReleases.expirationDate,
         createdAt: tutorialReleases.createdAt,
         user: users
       })
@@ -258,7 +261,6 @@ export class DatabaseStorage implements IStorage {
         companyRole: tutorialReleases.companyRole,
         tutorialIds: tutorialReleases.tutorialIds,
         status: tutorialReleases.status,
-        expirationDate: tutorialReleases.expirationDate,
         createdAt: tutorialReleases.createdAt,
         user: users
       })
