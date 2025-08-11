@@ -122,21 +122,21 @@ export default function Login() {
         loginMethod: data.loginMethod || loginMethod
       });
       
-      if (data.loginMethod === 'password' && response.user) {
-        // Direct login with password
+      if (response.user) {
+        // Direct login with password - user is authenticated
         toast({
           title: "Login realizado!",
           description: "Bem-vindo ao Portal de Tutoriais."
         });
       } else {
-        // Code verification needed
+        // Code verification needed - redirect to verification screen
         setUserEmail(data.email);
         setCurrentScreen('verification');
         toast({
           title: "Código enviado!",
           description: response.debugCode ? 
             `Código: ${response.debugCode} (problema com email)` : 
-            "Verifique seu email para o código de verificação."
+            "Verifique seu email e digite o código de verificação na próxima tela."
         });
       }
     } catch (error: any) {
@@ -371,9 +371,10 @@ export default function Login() {
         <div className="w-16 h-16 bg-nextest-green rounded-full flex items-center justify-center mx-auto mb-4">
           <Mail className="text-white h-8 w-8" />
         </div>
-        <h2 className="text-2xl font-semibold text-nextest-dark mb-2">Código Enviado</h2>
-        <p className="text-gray-600 text-sm">Verifique seu email e digite o código de 6 dígitos</p>
+        <h2 className="text-2xl font-semibold text-nextest-dark mb-2">Digite o Código de Verificação</h2>
+        <p className="text-gray-600 text-sm">Enviamos um código de 6 dígitos para seu email</p>
         <p className="text-nextest-blue text-sm font-medium mt-1">{userEmail}</p>
+        <p className="text-xs text-gray-500 mt-2">Verifique também sua caixa de spam</p>
       </div>
 
       <form onSubmit={verifyForm.handleSubmit(onVerify)} className="space-y-6">
@@ -402,6 +403,36 @@ export default function Login() {
       </form>
 
       <div className="text-center mt-6">
+        <Button 
+          variant="outline"
+          onClick={async () => {
+            try {
+              const response = await login({
+                email: userEmail,
+                password: '',
+                loginMethod: 'code'
+              });
+              toast({
+                title: "Código reenviado!",
+                description: response.debugCode ? 
+                  `Código: ${response.debugCode} (problema com email)` : 
+                  "Enviamos um novo código para seu email."
+              });
+            } catch (error: any) {
+              toast({
+                title: "Erro",
+                description: error.message,
+                variant: "destructive"
+              });
+            }
+          }}
+          className="w-full mb-3"
+          data-testid="button-resend-code"
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          Reenviar Código
+        </Button>
+
         <Button 
           variant="ghost" 
           onClick={() => setCurrentScreen('login')}
