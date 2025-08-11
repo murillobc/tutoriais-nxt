@@ -8,9 +8,28 @@ declare module "express-session" {
 }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { sendVerificationCode } from "./services/emailService";
+import { sendPasswordResetCode } from "./services/emailService";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+
+// API Key para autenticação dos endpoints de consulta
+const API_KEY = "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1";
+
+// Middleware de autenticação por API Key
+function requireApiKey(req: any, res: any, next: any) {
+  const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+  
+  if (!apiKey || apiKey !== API_KEY) {
+    console.log('❌ API Key inválida ou ausente:', apiKey ? 'key fornecida mas incorreta' : 'nenhuma key fornecida');
+    return res.status(401).json({ 
+      error: "API Key inválida ou ausente",
+      message: "Forneça uma API Key válida no header 'x-api-key' ou 'Authorization: Bearer <key>'"
+    });
+  }
+  
+  console.log('✅ API Key válida - acesso autorizado');
+  next();
+}
 
 const loginSchema = z.object({
   email: z.string().email().refine(email => email.endsWith('@nextest.com.br'), {
@@ -271,8 +290,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user
-  // Status tracking API for external confirmations
-  app.post("/api/tutorial-releases/:id/status", async (req, res) => {
+  // Status tracking API for external confirmations (requer API Key)
+  app.post("/api/tutorial-releases/:id/status", requireApiKey, async (req, res) => {
     try {
       const { id } = req.params;
       const { status, message } = req.body;
@@ -292,8 +311,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API: Consultar tutorial releases por status
-  app.get("/api/tutorial-releases/status/:status", async (req, res) => {
+  // API: Consultar tutorial releases por status (requer API Key)
+  app.get("/api/tutorial-releases/status/:status", requireApiKey, async (req, res) => {
     try {
       const { status } = req.params;
       
@@ -316,8 +335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API: Consultar apenas tutoriais pendentes (endpoint específico para n8n)
-  app.get("/api/tutorial-releases/pending", async (req, res) => {
+  // API: Consultar apenas tutoriais pendentes (endpoint específico para n8n - requer API Key)
+  app.get("/api/tutorial-releases/pending", requireApiKey, async (req, res) => {
     try {
       const releases = await storage.getTutorialReleasesByStatus('pending');
       
@@ -340,8 +359,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API: Estatísticas de status
-  app.get("/api/tutorial-releases/stats", async (req, res) => {
+  // API: Estatísticas de status (requer API Key)
+  app.get("/api/tutorial-releases/stats", requireApiKey, async (req, res) => {
     try {
       const stats = await storage.getTutorialReleaseStats();
       
