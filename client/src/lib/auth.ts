@@ -28,6 +28,17 @@ export interface RegisterRequest {
   confirmPassword?: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export const auth = {
   async login(data: LoginRequest) {
     const response = await apiRequest("POST", "/api/auth/login", data);
@@ -51,6 +62,16 @@ export const auth = {
 
   async getCurrentUser() {
     const response = await apiRequest("GET", "/api/auth/me");
+    return response.json();
+  },
+
+  async forgotPassword(data: ForgotPasswordRequest) {
+    const response = await apiRequest("POST", "/api/auth/forgot-password", data);
+    return response.json();
+  },
+
+  async resetPassword(data: ResetPasswordRequest) {
+    const response = await apiRequest("POST", "/api/auth/reset-password", data);
     return response.json();
   }
 };

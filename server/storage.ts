@@ -20,6 +20,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPassword(id: string, password: string): Promise<void>;
   
   // Verification codes
   createVerificationCode(code: InsertVerificationCode): Promise<VerificationCode>;
@@ -55,6 +56,13 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password })
+      .where(eq(users.id, id));
   }
 
   async createVerificationCode(code: InsertVerificationCode): Promise<VerificationCode> {
@@ -105,22 +113,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease> {
-    const releaseData = {
-      userId: release.userId,
-      clientName: release.clientName,
-      clientCpf: release.clientCpf,
-      clientEmail: release.clientEmail,
-      clientPhone: release.clientPhone,
-      companyName: release.companyName,
-      companyDocument: release.companyDocument,
-      companyRole: release.companyRole,
-      tutorialIds: release.tutorialIds,
-      status: 'pending' as const
-    };
-    
     const [tutorialRelease] = await db
       .insert(tutorialReleases)
-      .values(releaseData)
+      .values({
+        userId: release.userId,
+        clientName: release.clientName,
+        clientCpf: release.clientCpf,
+        clientEmail: release.clientEmail,
+        clientPhone: release.clientPhone,
+        companyName: release.companyName,
+        companyDocument: release.companyDocument,
+        companyRole: release.companyRole,
+        tutorialIds: release.tutorialIds,
+        status: 'pending'
+      })
       .returning();
     return tutorialRelease;
   }

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { auth, type User, type LoginRequest, type RegisterRequest } from "@/lib/auth";
+import { auth, type User, type LoginRequest, type RegisterRequest, type ForgotPasswordRequest, type ResetPasswordRequest } from "@/lib/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -8,6 +8,8 @@ interface AuthContextType {
   login: (data: LoginRequest) => Promise<any>;
   verify: (email: string, code: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
+  forgotPassword: (data: ForgotPasswordRequest) => Promise<any>;
+  resetPassword: (data: ResetPasswordRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -54,6 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: (data: ForgotPasswordRequest) => auth.forgotPassword(data),
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (data: ResetPasswordRequest) => auth.resetPassword(data),
+  });
+
   const logoutMutation = useMutation({
     mutationFn: () => auth.logout(),
     onSuccess: () => {
@@ -68,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login: (data: LoginRequest) => loginMutation.mutateAsync(data),
     verify: (email: string, code: string) => verifyMutation.mutateAsync({ email, code }),
     register: (data: RegisterRequest) => registerMutation.mutateAsync(data),
+    forgotPassword: (data: ForgotPasswordRequest) => forgotPasswordMutation.mutateAsync(data),
+    resetPassword: (data: ResetPasswordRequest) => resetPasswordMutation.mutateAsync(data),
     logout: () => logoutMutation.mutateAsync(),
   };
 

@@ -25,6 +25,22 @@ const verifySchema = z.object({
   code: z.string().length(6)
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email().refine(email => email.endsWith('@nextest.com.br'), {
+    message: 'Email deve ser do domínio @nextest.com.br'
+  })
+});
+
+const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6),
+  newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string()
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"]
+});
+
 const registerSchema = z.object({
   name: z.string().min(1),
   email: z.string().email().refine(email => email.endsWith('@nextest.com.br'), {
@@ -161,6 +177,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Register error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Erro no cadastro" });
+    }
+  });
+
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      const code = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      await storage.createVerificationCode({
+        email,
+        code,
+        expiresAt
+      });
+
+      try {
+        await sendVerificationCode(email, code, "reset");
+        res.json({ message: "Código de redefinição de senha enviado" });
+      } catch (emailError) {
+        console.error('Email sending failed, but code created:', emailError);
+        res.json({ 
+          message: "Código de redefinição gerado. Verifique o console para o código (email não enviado)",
+          debugCode: code // For debugging only - remove in production
+        });
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Erro ao solicitar redefinição de senha" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { email, code, newPassword } = resetPasswordSchema.parse(req.body);
+      
+      const verificationCode = await storage.getValidVerificationCode(email, code);
+      if (!verificationCode) {
+        return res.status(400).json({ message: "Código inválido ou expirado" });
+      }
+
+      await storage.markVerificationCodeAsUsed(verificationCode.id);
+      
+      // Update user password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      res.json({ message: "Senha redefinida com sucesso" });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Erro ao redefinir senha" });
     }
   });
 

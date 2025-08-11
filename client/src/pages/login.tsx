@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, User, Building, ArrowLeft, Key, Eye, EyeOff } from "lucide-react";
+import { Mail, User, Building, ArrowLeft, Key, Eye, EyeOff, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,11 +39,29 @@ const registerSchema = z.object({
   return true;
 }, { message: "Senhas não coincidem", path: ["confirmPassword"] });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Email inválido").refine(
+    email => email.endsWith('@nextest.com.br'),
+    "Email deve ser do domínio @nextest.com.br"
+  )
+});
+
+const resetPasswordSchema = z.object({
+  code: z.string().length(6, "Código deve ter 6 dígitos"),
+  newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string()
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"]
+});
+
 type LoginForm = z.infer<typeof loginSchema>;
 type VerifyForm = z.infer<typeof verifySchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
+type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
-type Screen = 'login' | 'verification' | 'register';
+type Screen = 'login' | 'verification' | 'register' | 'forgot-password' | 'reset-password';
 type LoginMethod = 'password' | 'code';
 
 export default function Login() {
@@ -52,7 +70,9 @@ export default function Login() {
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('code');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, verify, register } = useAuth();
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const { login, verify, register, forgotPassword, resetPassword } = useAuth();
   const { toast } = useToast();
 
   const loginForm = useForm<LoginForm>({
@@ -77,6 +97,20 @@ export default function Login() {
       department: '', 
       password: '',
       confirmPassword: ''
+    }
+  });
+
+  const forgotPasswordForm = useForm<ForgotPasswordForm>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' }
+  });
+
+  const resetPasswordForm = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { 
+      code: '', 
+      newPassword: '', 
+      confirmPassword: '' 
     }
   });
 
@@ -144,6 +178,48 @@ export default function Login() {
         description: data.password ? 
           "Agora você pode fazer login com senha." :
           "Agora você pode fazer login."
+      });
+      setCurrentScreen('login');
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const onForgotPassword = async (data: ForgotPasswordForm) => {
+    try {
+      const response = await forgotPassword({ email: data.email });
+      setUserEmail(data.email);
+      setCurrentScreen('reset-password');
+      toast({
+        title: "Código enviado!",
+        description: response.debugCode ? 
+          `Código: ${response.debugCode} (problema com email)` : 
+          "Verifique seu email para o código de redefinição."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const onResetPassword = async (data: ResetPasswordForm) => {
+    try {
+      await resetPassword({
+        email: userEmail,
+        code: data.code,
+        newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword
+      });
+      toast({
+        title: "Senha redefinida!",
+        description: "Agora você pode fazer login com sua nova senha."
       });
       setCurrentScreen('login');
     } catch (error: any) {
@@ -223,7 +299,17 @@ export default function Login() {
 
         {loginMethod === 'password' && (
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Senha</Label>
+              <button
+                type="button"
+                onClick={() => setCurrentScreen('forgot-password')}
+                className="text-sm text-nextest-blue hover:text-nextest-dark transition-colors"
+                data-testid="button-forgot-password"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
             <div className="relative">
               <Input
                 id="password"
@@ -466,11 +552,159 @@ export default function Login() {
     </div>
   );
 
+  const ForgotPasswordScreen = () => (
+    <div className="glass-effect rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-nextest-blue rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="text-white h-8 w-8" />
+        </div>
+        <h2 className="text-2xl font-semibold text-nextest-dark mb-2">Esqueci minha Senha</h2>
+        <p className="text-gray-600 text-sm">Digite seu email para receber um código de redefinição</p>
+      </div>
+
+      <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPassword)} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="forgot-email">Email Corporativo</Label>
+          <Input
+            id="forgot-email"
+            type="email"
+            placeholder="seuemail@nextest.com.br"
+            {...forgotPasswordForm.register("email")}
+            data-testid="input-forgot-email"
+          />
+          {forgotPasswordForm.formState.errors.email && (
+            <p className="text-sm text-red-500">{forgotPasswordForm.formState.errors.email.message}</p>
+          )}
+        </div>
+
+        <Button 
+          type="submit" 
+          className="w-full gradient-button text-white hover:scale-[1.02] transition-all duration-300"
+          data-testid="button-send-reset-code"
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          Enviar Código de Redefinição
+        </Button>
+      </form>
+
+      <div className="text-center mt-6">
+        <Button 
+          variant="ghost" 
+          onClick={() => setCurrentScreen('login')}
+          data-testid="button-back-to-login-from-forgot"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar ao login
+        </Button>
+      </div>
+    </div>
+  );
+
+  const ResetPasswordScreen = () => (
+    <div className="glass-effect rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-nextest-green rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="text-white h-8 w-8" />
+        </div>
+        <h2 className="text-2xl font-semibold text-nextest-dark mb-2">Redefinir Senha</h2>
+        <p className="text-gray-600 text-sm">Digite o código enviado e sua nova senha</p>
+        <p className="text-nextest-blue text-sm font-medium mt-1">{userEmail}</p>
+      </div>
+
+      <form onSubmit={resetPasswordForm.handleSubmit(onResetPassword)} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="reset-code">Código de Verificação</Label>
+          <Input
+            id="reset-code"
+            placeholder="000000"
+            maxLength={6}
+            className="text-center text-2xl font-mono tracking-wider"
+            {...resetPasswordForm.register("code")}
+            data-testid="input-reset-code"
+          />
+          {resetPasswordForm.formState.errors.code && (
+            <p className="text-sm text-red-500">{resetPasswordForm.formState.errors.code.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="new-password">Nova Senha</Label>
+          <div className="relative">
+            <Input
+              id="new-password"
+              type={showNewPassword ? "text" : "password"}
+              placeholder="Mínimo 6 caracteres"
+              {...resetPasswordForm.register("newPassword")}
+              data-testid="input-new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNewPassword(!showNewPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              data-testid="button-toggle-new-password"
+            >
+              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {resetPasswordForm.formState.errors.newPassword && (
+            <p className="text-sm text-red-500">{resetPasswordForm.formState.errors.newPassword.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confirm-new-password">Confirmar Nova Senha</Label>
+          <div className="relative">
+            <Input
+              id="confirm-new-password"
+              type={showConfirmNewPassword ? "text" : "password"}
+              placeholder="Repita a nova senha"
+              {...resetPasswordForm.register("confirmPassword")}
+              data-testid="input-confirm-new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              data-testid="button-toggle-confirm-new-password"
+            >
+              {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {resetPasswordForm.formState.errors.confirmPassword && (
+            <p className="text-sm text-red-500">{resetPasswordForm.formState.errors.confirmPassword.message}</p>
+          )}
+        </div>
+
+        <Button 
+          type="submit" 
+          className="w-full gradient-button text-white hover:scale-[1.02] transition-all duration-300"
+          data-testid="button-confirm-reset"
+        >
+          <Key className="mr-2 h-4 w-4" />
+          Redefinir Senha
+        </Button>
+      </form>
+
+      <div className="text-center mt-6">
+        <Button 
+          variant="ghost" 
+          onClick={() => setCurrentScreen('forgot-password')}
+          data-testid="button-back-to-forgot"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="gradient-bg min-h-screen flex items-center justify-center p-4">
       {currentScreen === 'login' && <LoginScreen />}
       {currentScreen === 'verification' && <VerificationScreen />}
       {currentScreen === 'register' && <RegisterScreen />}
+      {currentScreen === 'forgot-password' && <ForgotPasswordScreen />}
+      {currentScreen === 'reset-password' && <ResetPasswordScreen />}
     </div>
   );
 }
