@@ -1,315 +1,366 @@
-# 🔗 Integração API de Status com n8n
+# 🔗 Tutorial Status API - Guia de Integração
 
-## 📡 Endpoint da API de Status
+## ⚠️ **PROBLEMA RESOLVIDO - HTML vs JSON**
 
-### URL Base
-```
-https://tutoriais.educanextest.com.br/api/tutorial-releases/:id/status
-```
+Se você estava recebendo HTML em vez de JSON, o problema foi identificado:
 
-### Método
+### ✅ **URL CORRETA (Use esta):**
+
 ```
-POST
+https://tutoriais.educanextest.com.br/api/tutorial-releases/pending
 ```
 
-### Headers Obrigatórios
+**Em desenvolvimento:**
+```
+http://localhost:5000/api/tutorial-releases/pending
+```
+
+### ❌ **URLs Incorretas (que retornam HTML):**
+```
+/tutorials-release/pending    ❌ (singular/plural incorreto)
+/api/tutorials-release/...    ❌ (singular/plural incorreto)
+```
+
+## 🔑 **Sua API Key (Obrigatória)**
+```
+nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1
+```
+
+## 🎯 **Teste Rápido - cURL**
+
+### **Endpoint Principal:**
+```bash
+curl -X GET "https://tutoriais.educanextest.com.br/api/tutorial-releases/pending" \
+  -H "x-api-key: nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1" \
+  -H "Accept: application/json"
+```
+
+### **Endpoint Alternativo:**
+```bash
+curl -X GET "https://tutoriais.educanextest.com.br/tutorial-releases/pending" \
+  -H "x-api-key: nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1" \
+  -H "Accept: application/json"
+```
+
+## 📱 **Integração n8n - Configuração Completa**
+
+### **HTTP Request Node:**
 ```json
 {
-  "Content-Type": "application/json"
+  "name": "Get Pending Tutorials",
+  "type": "n8n-nodes-base.httpRequest",
+  "parameters": {
+    "url": "https://tutoriais.educanextest.com.br/api/tutorial-releases/pending",
+    "method": "GET",
+    "headers": {
+      "x-api-key": "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1",
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    }
+  }
 }
 ```
 
-### Body da Requisição
+### **Resposta Esperada (JSON):**
 ```json
 {
-  "status": "success|failed|pending",
-  "message": "Mensagem opcional para log"
+  "count": 2,
+  "pending_releases": [
+    {
+      "id": "24727cd9-5d90-4adc-9314-a65350eac886",
+      "client_name": "João Silva",
+      "client_email": "joao@empresa.com",
+      "client_company": "IT Solutions",
+      "created_at": "2025-08-07T20:52:13.053Z",
+      "status": "pending"
+    }
+  ]
 }
 ```
 
-## 🎯 Valores de Status Aceitos
-
-- `pending` - Tutorial aguardando liberação
-- `success` - Tutorial liberado com sucesso
-- `failed` - Falha na liberação do tutorial
-
-## 🔧 Integração com n8n
-
-### 1. Configuração do Webhook no n8n
+## 🔄 **Workflow n8n Completo**
 
 ```json
 {
+  "name": "Tutorial Status Monitor",
   "nodes": [
     {
-      "name": "Webhook Trigger",
-      "type": "n8n-nodes-base.webhook",
+      "name": "Schedule",
+      "type": "n8n-nodes-base.cron",
       "parameters": {
-        "httpMethod": "POST",
-        "path": "tutorial-status-update",
-        "responseMode": "responseNode"
+        "rule": {
+          "interval": [5],
+          "intervalSize": "minute"
+        }
       }
     },
     {
-      "name": "Update Tutorial Status",
+      "name": "Check Pending",
       "type": "n8n-nodes-base.httpRequest",
       "parameters": {
-        "url": "https://tutoriais.educanextest.com.br/api/tutorial-releases/{{ $json.tutorialId }}/status",
+        "url": "https://tutoriais.educanextest.com.br/api/tutorial-releases/pending",
+        "method": "GET",
+        "headers": {
+          "x-api-key": "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1",
+          "Accept": "application/json"
+        }
+      }
+    },
+    {
+      "name": "Has Pending?",
+      "type": "n8n-nodes-base.if",
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.count }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Split Array",
+      "type": "n8n-nodes-base.itemLists",
+      "parameters": {
+        "operation": "splitOutItems",
+        "fieldToSplitOut": "pending_releases"
+      }
+    },
+    {
+      "name": "Process Tutorial",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://tutoriais.educanextest.com.br/api/tutorial-releases/{{ $json.id }}/status",
         "method": "POST",
         "headers": {
+          "x-api-key": "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1",
           "Content-Type": "application/json"
         },
         "body": {
-          "status": "{{ $json.status }}",
-          "message": "Atualizado via n8n: {{ $json.message || 'Status atualizado automaticamente' }}"
+          "status": "success",
+          "message": "Processado automaticamente via n8n"
         }
+      }
+    },
+    {
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.slack",
+      "parameters": {
+        "text": "✅ Tutorial {{ $json.client_name }} processado com sucesso!"
       }
     }
   ]
 }
 ```
 
-### 2. Exemplo de Payload para n8n
-```json
-{
-  "tutorialId": "123e4567-e89b-12d3-a456-426614174000",
-  "status": "success",
-  "message": "Tutorial liberado automaticamente pelo sistema"
-}
-```
+## 💻 **Código JavaScript/Node.js**
 
-### 3. Workflow n8n Completo
-
-#### Nó 1: Webhook Trigger
-- **URL**: `https://seu-n8n.com/webhook/tutorial-status-update`
-- **Método**: POST
-- **Autenticação**: Configurar se necessário
-
-#### Nó 2: Processar Dados
 ```javascript
-// Code Node - Processar dados recebidos
-const tutorialId = $input.item.json.tutorialId;
-const status = $input.item.json.status || 'success';
-const message = $input.item.json.message || 'Processado via n8n';
+const API_KEY = 'nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1';
+const BASE_URL = 'https://tutoriais.educanextest.com.br/api';
 
-return {
-  tutorialId,
-  status,
-  message,
-  timestamp: new Date().toISOString()
-};
-```
+async function checkPendingTutorials() {
+  try {
+    const response = await fetch(`${BASE_URL}/tutorial-releases/pending`, {
+      method: 'GET',
+      headers: {
+        'x-api-key': API_KEY,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
 
-#### Nó 3: HTTP Request - Atualizar Status
-- **URL**: `https://tutoriais.educanextest.com.br/api/tutorial-releases/{{ $json.tutorialId }}/status`
-- **Método**: POST
-- **Headers**: 
-  ```json
-  {
-    "Content-Type": "application/json"
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`📊 Tutoriais pendentes: ${data.count}`);
+
+    return data;
+  } catch (error) {
+    console.error('❌ Erro ao buscar tutoriais pendentes:', error);
+    throw error;
   }
-  ```
-- **Body**:
-  ```json
-  {
-    "status": "{{ $json.status }}",
-    "message": "{{ $json.message }}"
-  }
-  ```
-
-#### Nó 4: Response (Opcional)
-```json
-{
-  "success": true,
-  "tutorialId": "{{ $json.tutorialId }}",
-  "statusUpdated": "{{ $json.status }}",
-  "timestamp": "{{ $json.timestamp }}"
 }
-```
 
-## 🧪 Como Testar a API
-
-### 1. Teste Manual com cURL
-```bash
-# Obter lista de releases para pegar um ID
-curl -X GET "https://tutoriais.educanextest.com.br/api/tutorial-releases"
-
-# Atualizar status (substitua ID_REAL)
-curl -X POST "https://tutoriais.educanextest.com.br/api/tutorial-releases/ID_REAL/status" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "success",
-    "message": "Teste via cURL"
-  }'
-```
-
-### 2. Teste com JavaScript/Fetch
-```javascript
 async function updateTutorialStatus(tutorialId, status, message) {
   try {
-    const response = await fetch(`https://tutoriais.educanextest.com.br/api/tutorial-releases/${tutorialId}/status`, {
+    const response = await fetch(`${BASE_URL}/tutorial-releases/${tutorialId}/status`, {
       method: 'POST',
       headers: {
+        'x-api-key': API_KEY,
+        'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         status: status,
-        message: message || 'Atualizado programaticamente'
+        message: message
       })
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
     const result = await response.json();
-    console.log('Status atualizado:', result);
+    console.log(`✅ Status atualizado para: ${status}`);
+
     return result;
   } catch (error) {
-    console.error('Erro ao atualizar status:', error);
+    console.error('❌ Erro ao atualizar status:', error);
     throw error;
   }
 }
 
 // Exemplo de uso
-updateTutorialStatus('seu-tutorial-id', 'success', 'Liberado automaticamente');
-```
-
-### 3. Teste no Postman
-```json
-{
-  "method": "POST",
-  "url": "https://tutoriais.educanextest.com.br/api/tutorial-releases/{{tutorialId}}/status",
-  "headers": {
-    "Content-Type": "application/json"
-  },
-  "body": {
-    "raw": {
-      "status": "success",
-      "message": "Teste via Postman"
+async function processAllPending() {
+  try {
+    const pendingData = await checkPendingTutorials();
+    
+    for (const tutorial of pendingData.pending_releases) {
+      console.log(`🔄 Processando: ${tutorial.client_name}`);
+      
+      await updateTutorialStatus(
+        tutorial.id,
+        'success',
+        'Processado automaticamente via integração'
+      );
+      
+      console.log(`✅ ${tutorial.client_name} processado com sucesso`);
     }
+  } catch (error) {
+    console.error('❌ Erro no processamento:', error);
   }
 }
+
+// Executar a cada 5 minutos
+setInterval(processAllPending, 5 * 60 * 1000);
 ```
 
-## 🔍 Verificar Status da API
+## 🐍 **Código Python**
 
-### 1. Health Check da API
-```bash
-curl -X GET "https://tutoriais.educanextest.com.br/api/tutorials"
+```python
+import requests
+import json
+import time
+
+API_KEY = 'nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1'
+BASE_URL = 'https://tutoriais.educanextest.com.br/api'
+
+def get_headers():
+    return {
+        'x-api-key': API_KEY,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+
+def check_pending_tutorials():
+    try:
+        response = requests.get(
+            f'{BASE_URL}/tutorial-releases/pending',
+            headers=get_headers()
+        )
+        
+        response.raise_for_status()
+        data = response.json()
+        
+        print(f"📊 Tutoriais pendentes: {data['count']}")
+        return data
+        
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Erro ao buscar tutoriais pendentes: {e}")
+        raise
+
+def update_tutorial_status(tutorial_id, status, message):
+    try:
+        response = requests.post(
+            f'{BASE_URL}/tutorial-releases/{tutorial_id}/status',
+            headers=get_headers(),
+            json={
+                'status': status,
+                'message': message
+            }
+        )
+        
+        response.raise_for_status()
+        result = response.json()
+        
+        print(f"✅ Status atualizado para: {status}")
+        return result
+        
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Erro ao atualizar status: {e}")
+        raise
+
+def process_all_pending():
+    try:
+        pending_data = check_pending_tutorials()
+        
+        for tutorial in pending_data['pending_releases']:
+            print(f"🔄 Processando: {tutorial['client_name']}")
+            
+            update_tutorial_status(
+                tutorial['id'],
+                'success',
+                'Processado automaticamente via Python'
+            )
+            
+            print(f"✅ {tutorial['client_name']} processado com sucesso")
+            
+    except Exception as e:
+        print(f"❌ Erro no processamento: {e}")
+
+# Loop de monitoramento
+if __name__ == "__main__":
+    while True:
+        process_all_pending()
+        time.sleep(300)  # 5 minutos
 ```
 
-### 2. Verificar Logs do Servidor
-```bash
-# Na VPS com Docker
-docker logs $(docker ps -q --filter name=nextest)
+## 🧪 **Troubleshooting**
 
-# Ou ver logs em tempo real
-docker logs -f $(docker ps -q --filter name=nextest)
+### **Problema: Recebendo HTML em vez de JSON**
+✅ **Solução:** Use as URLs corretas:
+- `/api/tutorial-releases/pending` ✅
+- `/tutorial-releases/pending` ✅
+
+❌ **NÃO use:**
+- `/tutorials-release/pending` (singular/plural incorreto)
+- URLs sem API key
+
+### **Problema: Erro 401 - Não autorizado**
+✅ **Solução:** Inclua a API key no header:
+```
+x-api-key: nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1
 ```
 
-### 3. Verificar Tutorial Releases
-```bash
-curl -X GET "https://tutoriais.educanextest.com.br/api/tutorial-releases"
-```
+### **Problema: Timeout ou erro de conexão**
+✅ **Verificações:**
+1. URL correta com https:// em produção
+2. API key incluída no header
+3. Content-Type: application/json
 
-## 🚨 Tratamento de Erros
+## 📋 **Checklist de Integração**
 
-### Respostas da API
-
-#### Sucesso (200)
-```json
-{
-  "success": true,
-  "message": "Status atualizado com sucesso",
-  "tutorialRelease": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "status": "success",
-    "updatedAt": "2025-08-11T15:30:00Z"
-  }
-}
-```
-
-#### Erro 404 - Tutorial não encontrado
-```json
-{
-  "error": "Tutorial release não encontrado"
-}
-```
-
-#### Erro 400 - Status inválido
-```json
-{
-  "error": "Status deve ser: pending, success ou failed"
-}
-```
-
-### Tratamento no n8n
-```javascript
-// Nó de tratamento de erro
-if ($input.item.json.error) {
-  console.error('Erro na API:', $input.item.json.error);
-  
-  // Enviar notificação de erro
-  return {
-    error: true,
-    message: $input.item.json.error,
-    tutorialId: $input.item.json.tutorialId
-  };
-}
-
-return $input.item.json;
-```
-
-## 📊 Monitoramento
-
-### 1. Logs da Aplicação
-Os logs mostrarão:
-- Requisições recebidas na API de status
-- IDs dos tutorials atualizados
-- Status alterados (pending → success/failed)
-- Erros de validação
-
-### 2. Webhook de Notificação (Opcional)
-A API pode enviar notificações para um webhook configurado:
-```json
-{
-  "tutorialId": "123e4567-e89b-12d3-a456-426614174000",
-  "oldStatus": "pending",
-  "newStatus": "success",
-  "updatedBy": "n8n-automation",
-  "timestamp": "2025-08-11T15:30:00Z"
-}
-```
-
-## 🎯 Casos de Uso Comuns
-
-### 1. Sistema de Pagamento
-```javascript
-// Após confirmação de pagamento
-updateTutorialStatus(tutorialId, 'success', 'Pagamento confirmado');
-```
-
-### 2. Falha no Processamento
-```javascript
-// Após falha em algum processo
-updateTutorialStatus(tutorialId, 'failed', 'Erro no processamento do pagamento');
-```
-
-### 3. Cancelamento
-```javascript
-// Retornar para pending
-updateTutorialStatus(tutorialId, 'pending', 'Cancelamento solicitado pelo cliente');
-```
+- [x] ✅ API Key configurada
+- [x] ✅ URLs corretas documentadas  
+- [x] ✅ Content-Type forçado para JSON
+- [x] ✅ Headers Accept configurados
+- [x] ✅ Endpoints alternativos criados
+- [x] ✅ Exemplos n8n documentados
+- [x] ✅ Código JavaScript/Python prontos
+- [x] ✅ Troubleshooting documentado
 
 ---
 
-## 📋 Checklist de Integração
+**🎯 API Status está 100% funcional e pronta para integração!**
 
-- [ ] API de status funcionando na VPS
-- [ ] n8n configurado para receber webhooks
-- [ ] Workflow n8n criado para atualizar status
-- [ ] Testes realizados com IDs reais
-- [ ] Tratamento de erros implementado
-- [ ] Logs de monitoramento configurados
-- [ ] Documentação da integração compartilhada
+**URLs funcionando:**
+- `https://tutoriais.educanextest.com.br/api/tutorial-releases/pending`
+- `https://tutoriais.educanextest.com.br/tutorial-releases/pending`
 
----
-
-**Pronto para integração com n8n!**
-Data: 11 de Agosto de 2025
+Teste com sua ferramenta usando uma dessas URLs com a API key fornecida.

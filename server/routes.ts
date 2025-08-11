@@ -314,6 +314,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API: Consultar tutorial releases por status (requer API Key)
   app.get("/api/tutorial-releases/status/:status", requireApiKey, async (req, res) => {
     try {
+      res.setHeader('Content-Type', 'application/json');
+      
       const { status } = req.params;
       
       if (!['pending', 'success', 'failed'].includes(status)) {
@@ -338,6 +340,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API: Consultar apenas tutoriais pendentes (endpoint específico para n8n - requer API Key)
   app.get("/api/tutorial-releases/pending", requireApiKey, async (req, res) => {
     try {
+      // Forçar content-type JSON
+      res.setHeader('Content-Type', 'application/json');
+      
       const releases = await storage.getTutorialReleasesByStatus('pending');
       
       console.log(`API consulta tutoriais pendentes - encontrados: ${releases.length}`);
@@ -359,9 +364,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API alternativa sem /api no path (para compatibilidade com diferentes ferramentas)
+  // NOTA: Esta rota pode conflitar com o Vite middleware em desenvolvimento
+  // Use preferencialmente a rota com /api
+  app.get("/tutorial-releases/pending", requireApiKey, async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      
+      const releases = await storage.getTutorialReleasesByStatus('pending');
+      
+      console.log(`🔄 API alternativa consulta tutoriais pendentes - encontrados: ${releases.length}`);
+      
+      res.json({ 
+        count: releases.length,
+        pending_releases: releases.map(release => ({
+          id: release.id,
+          client_name: release.clientName,
+          client_email: release.clientEmail,
+          client_company: release.companyName,
+          created_at: release.createdAt,
+          status: release.status
+        }))
+      });
+    } catch (error) {
+      console.error('Get pending releases error (alt):', error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Erro ao buscar tutoriais pendentes" });
+    }
+  });
+
   // API: Estatísticas de status (requer API Key)
   app.get("/api/tutorial-releases/stats", requireApiKey, async (req, res) => {
     try {
+      res.setHeader('Content-Type', 'application/json');
+      
       const stats = await storage.getTutorialReleaseStats();
       
       console.log('API consulta estatísticas de tutorial releases');
