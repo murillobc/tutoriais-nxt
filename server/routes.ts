@@ -220,6 +220,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Logout realizado com sucesso" });
   });
 
+  // Job Roles routes
+  app.get("/api/job-roles", async (req, res) => {
+    try {
+      const { type } = req.query;
+      
+      if (type && (type === 'department' || type === 'client_role')) {
+        const roles = await storage.getJobRolesByType(type as 'department' | 'client_role');
+        res.json(roles);
+      } else {
+        const roles = await storage.getAllJobRoles();
+        res.json(roles);
+      }
+    } catch (error) {
+      console.error('Error getting job roles:', error);
+      res.status(500).json({ message: "Erro ao buscar cargos" });
+    }
+  });
+
+  app.post("/api/job-roles", async (req, res) => {
+    try {
+      if (!(req.session as any)?.userId) {
+        return res.status(401).json({ message: "Não autorizado" });
+      }
+      
+      const roleData = req.body;
+      const role = await storage.createJobRole(roleData);
+      res.status(201).json(role);
+    } catch (error) {
+      console.error('Error creating job role:', error);
+      res.status(500).json({ message: "Erro ao criar cargo" });
+    }
+  });
+
+  app.put("/api/job-roles/:id", async (req, res) => {
+    try {
+      if (!(req.session as any)?.userId) {
+        return res.status(401).json({ message: "Não autorizado" });
+      }
+      
+      const { id } = req.params;
+      const roleData = req.body;
+      await storage.updateJobRole(id, roleData);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating job role:', error);
+      res.status(500).json({ message: "Erro ao atualizar cargo" });
+    }
+  });
+
+  app.delete("/api/job-roles/:id", async (req, res) => {
+    try {
+      if (!(req.session as any)?.userId) {
+        return res.status(401).json({ message: "Não autorizado" });
+      }
+      
+      const { id } = req.params;
+      await storage.deleteJobRole(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting job role:', error);
+      res.status(500).json({ message: "Erro ao excluir cargo" });
+    }
+  });
+
   // Tutorials routes
   app.get("/api/tutorials", async (req, res) => {
     try {

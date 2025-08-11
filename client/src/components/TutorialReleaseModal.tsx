@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { InputMask } from "@/components/ui/input-mask";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DynamicSelectContent } from "@/components/DynamicSelectContent";
 
 
 const tutorialReleaseSchema = z.object({
@@ -234,13 +235,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                     <SelectTrigger className="w-full" data-testid="select-company-role">
                       <SelectValue placeholder="Selecione um cargo" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="placeholder" disabled>Selecione um cargo</SelectItem>
-                      <SelectItem value="Desenvolvedor">Desenvolvedor</SelectItem>
-                      <SelectItem value="Gerente">Gerente</SelectItem>
-                      <SelectItem value="Analista">Analista</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
-                    </SelectContent>
+                    <DynamicSelectContent type="client_role" />
                   </Select>
                   {form.formState.errors.companyRole && (
                     <p className="text-sm text-red-500">{form.formState.errors.companyRole.message}</p>

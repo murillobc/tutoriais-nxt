@@ -3,12 +3,15 @@ import {
   verificationCodes, 
   tutorials, 
   tutorialReleases,
+  jobRoles,
   type User, 
   type InsertUser,
   type VerificationCode,
   type InsertVerificationCode,
   type Tutorial,
   type InsertTutorial,
+  type JobRole,
+  type InsertJobRole,
   type TutorialRelease,
   type InsertTutorialRelease
 } from "@shared/schema";
@@ -41,6 +44,13 @@ export interface IStorage {
   getTutorialReleaseStats(): Promise<any>;
   checkAndUpdateExpiredReleases(): Promise<void>;
   getTutorialReleasesForReport(filters?: any): Promise<(TutorialRelease & { user: User })[]>;
+  
+  // Job Roles
+  getAllJobRoles(): Promise<JobRole[]>;
+  getJobRolesByType(type: 'department' | 'client_role'): Promise<JobRole[]>;
+  createJobRole(role: InsertJobRole): Promise<JobRole>;
+  updateJobRole(id: string, role: Partial<InsertJobRole>): Promise<void>;
+  deleteJobRole(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -278,6 +288,45 @@ export class DatabaseStorage implements IStorage {
     }
     
     return results.filter(result => result.user !== null) as (TutorialRelease & { user: User })[];
+  }
+
+  // Job Roles methods
+  async getAllJobRoles(): Promise<JobRole[]> {
+    return await db
+      .select()
+      .from(jobRoles)
+      .where(eq(jobRoles.active, true))
+      .orderBy(jobRoles.sortOrder, jobRoles.name);
+  }
+
+  async getJobRolesByType(type: 'department' | 'client_role'): Promise<JobRole[]> {
+    return await db
+      .select()
+      .from(jobRoles)
+      .where(and(eq(jobRoles.type, type), eq(jobRoles.active, true)))
+      .orderBy(jobRoles.sortOrder, jobRoles.name);
+  }
+
+  async createJobRole(role: InsertJobRole): Promise<JobRole> {
+    const [newRole] = await db
+      .insert(jobRoles)
+      .values(role)
+      .returning();
+    return newRole;
+  }
+
+  async updateJobRole(id: string, role: Partial<InsertJobRole>): Promise<void> {
+    await db
+      .update(jobRoles)
+      .set(role)
+      .where(eq(jobRoles.id, id));
+  }
+
+  async deleteJobRole(id: string): Promise<void> {
+    await db
+      .update(jobRoles)
+      .set({ active: false })
+      .where(eq(jobRoles.id, id));
   }
 }
 

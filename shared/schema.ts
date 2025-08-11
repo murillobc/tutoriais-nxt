@@ -31,6 +31,17 @@ export const tutorials = pgTable("tutorials", {
   idCademi: integer("id_cademi").notNull(),
 });
 
+// Tabela para armazenar cargos/departamentos
+export const jobRoles = pgTable("job_roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  value: text("value").notNull(), // valor interno usado pelo sistema
+  type: text("type").notNull(), // 'department' ou 'client_role'
+  active: boolean("active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const tutorialReleases = pgTable("tutorial_releases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -75,6 +86,11 @@ export const insertTutorialSchema = createInsertSchema(tutorials).omit({
   id: true,
 });
 
+export const insertJobRoleSchema = createInsertSchema(jobRoles).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTutorialReleaseSchema = createInsertSchema(tutorialReleases).omit({
   id: true,
   createdAt: true,
@@ -87,5 +103,7 @@ export type VerificationCode = typeof verificationCodes.$inferSelect;
 export type InsertVerificationCode = z.infer<typeof insertVerificationCodeSchema>;
 export type Tutorial = typeof tutorials.$inferSelect;
 export type InsertTutorial = z.infer<typeof insertTutorialSchema>;
+export type JobRole = typeof jobRoles.$inferSelect;
+export type InsertJobRole = z.infer<typeof insertJobRoleSchema>;
 export type TutorialRelease = typeof tutorialReleases.$inferSelect;
 export type InsertTutorialRelease = z.infer<typeof insertTutorialReleaseSchema>;

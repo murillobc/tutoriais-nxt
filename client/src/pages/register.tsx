@@ -6,10 +6,11 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/auth";
 import { UserPlus, ArrowLeft } from "lucide-react";
+import { DynamicSelectContent } from "@/components/DynamicSelectContent";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -132,13 +133,7 @@ export default function Register() {
                         <SelectValue placeholder="Selecione o departamento" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="engineering">Engenharia</SelectItem>
-                      <SelectItem value="sales">Vendas</SelectItem>
-                      <SelectItem value="support">Suporte</SelectItem>
-                      <SelectItem value="management">Gerência</SelectItem>
-                      <SelectItem value="other">Outro</SelectItem>
-                    </SelectContent>
+                    <DynamicSelectContent type="department" />
                   </Select>
                   <FormMessage />
                 </FormItem>

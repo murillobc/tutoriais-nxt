@@ -18,7 +18,34 @@ BEGIN
     END IF;
 END $$;
 
--- 2. INSERIR TUTORIAIS BÁSICOS (se tabela estiver vazia)
+-- 2. CRIAR TABELA JOB_ROLES (cargos/departamentos)
+CREATE TABLE IF NOT EXISTS job_roles (
+    id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    value TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('department', 'client_role')),
+    active BOOLEAN DEFAULT TRUE NOT NULL,
+    sort_order INTEGER DEFAULT 0 NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+-- Inserir departamentos e cargos
+INSERT INTO job_roles (name, value, type, sort_order) VALUES 
+('Engenharia', 'engineering', 'department', 1),
+('Vendas', 'sales', 'department', 2),
+('Suporte', 'support', 'department', 3),
+('Gerência', 'management', 'department', 4),
+('Outro', 'other', 'department', 5),
+('Desenvolvedor', 'Desenvolvedor', 'client_role', 1),
+('Gerente', 'Gerente', 'client_role', 2),
+('Analista', 'Analista', 'client_role', 3),
+('Coordenador', 'Coordenador', 'client_role', 4),
+('Diretor', 'Diretor', 'client_role', 5),
+('Técnico', 'Técnico', 'client_role', 6),
+('Outro', 'Outro', 'client_role', 9)
+ON CONFLICT DO NOTHING;
+
+-- 3. INSERIR TUTORIAIS BÁSICOS (se tabela estiver vazia)
 -- Execute APENAS se não houver tutoriais cadastrados
 INSERT INTO tutorials (name, description, tag, id_cademi) 
 SELECT * FROM (VALUES
@@ -29,13 +56,13 @@ SELECT * FROM (VALUES
 ) AS t(name, description, tag, id_cademi)
 WHERE NOT EXISTS (SELECT 1 FROM tutorials LIMIT 1);
 
--- 3. ATUALIZAR RELEASES EXISTENTES PARA TER DATA DE EXPIRAÇÃO (90 dias a partir da criação)
+-- 4. ATUALIZAR RELEASES EXISTENTES PARA TER DATA DE EXPIRAÇÃO (90 dias a partir da criação)
 -- Execute APENAS se quiser definir expiração para releases já existentes
 UPDATE tutorial_releases 
 SET expiration_date = created_at + INTERVAL '90 days'
 WHERE expiration_date IS NULL;
 
--- 4. CRIAR FUNÇÃO DE VERIFICAÇÃO DE EXPIRAÇÃO (se não existir)
+-- 5. CRIAR FUNÇÃO DE VERIFICAÇÃO DE EXPIRAÇÃO (se não existir)
 CREATE OR REPLACE FUNCTION check_and_update_expired_releases()
 RETURNS void AS $$
 BEGIN
@@ -50,10 +77,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 5. EXECUTAR VERIFICAÇÃO DE EXPIRAÇÃO IMEDIATAMENTE
+-- 6. EXECUTAR VERIFICAÇÃO DE EXPIRAÇÃO IMEDIATAMENTE
 SELECT check_and_update_expired_releases();
 
--- 6. VERIFICAR RESULTADO FINAL
+-- 7. VERIFICAR RESULTADO FINAL
 SELECT 
     'Estrutura atualizada com sucesso!' as status,
     COUNT(*) as total_releases,
