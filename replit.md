@@ -2,6 +2,13 @@
 
 This is a tutorial release management system for Nextest, designed to allow employees to create and manage tutorial access for external clients. The application features a React frontend built with TypeScript, Vite, and shadcn/ui components, paired with an Express backend using Drizzle ORM for PostgreSQL database management. The system implements email-based authentication with verification codes, restricted to @nextest.com.br domain users, and provides a comprehensive dashboard for managing tutorial releases with client information tracking.
 
+## Recent Updates (v2.1 - August 2025)
+- ✅ **Expiration System**: Added automatic 90-day expiration for tutorial releases when status changes to "success"
+- ✅ **Auto-Expiration**: Automated system to mark releases as "expired" when expiration date is reached
+- ✅ **Report Generation**: PDF and Excel export functionality for tutorial releases data
+- ✅ **Enhanced Dashboard**: New expiration date column and export buttons
+- ✅ **Database Migration**: Updated schema to support expiration dates and new status types
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -28,14 +35,18 @@ Preferred communication style: Simple, everyday language.
 - **Verification Codes**: Temporary codes for email authentication with expiration tracking
 - **Tutorials**: Tutorial content catalog with categories and active status
 - **Tutorial Releases**: Client access records linking users to client information and selected tutorials
+  - **New**: `expirationDate` field for 90-day automatic expiration from success status
+  - **Updated**: Status now includes 'expired' option alongside pending, success, failed
 
 ## Key Features
 - **Domain-Restricted Authentication**: Only @nextest.com.br email addresses can register and login
 - **Tutorial Release Management**: Track client details (name, CPF, email, company) and assigned tutorials
 - **Dashboard Analytics**: Display statistics for total releases, monthly counts, active releases, and company metrics
-- **Search and Filtering**: Client and release search functionality with status filtering
+- **Search and Filtering**: Client and release search functionality with status filtering including expired status
 - **Input Validation**: CPF and phone number masking with comprehensive form validation
 - **HTTP Status API**: External systems can update tutorial release status via POST /api/tutorial-releases/:id/status endpoint
+- **Expiration Management**: Automatic 90-day expiration system with visual indicators and status updates
+- **Report Generation**: PDF and Excel export capabilities with comprehensive data including expiration dates
 - **Docker Support**: Full Docker and Docker Compose configuration for VPS deployment with Traefik reverse proxy
 - **Production Environment**: Configured for educanextest.com.br domain with SSL/TLS support
 
