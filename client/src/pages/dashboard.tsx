@@ -82,7 +82,7 @@ export default function Dashboard() {
       const now = new Date();
       return releaseDate.getMonth() === now.getMonth() && releaseDate.getFullYear() === now.getFullYear();
     }).length,
-    active: releases.filter(r => r.status === 'active').length,
+    active: releases.filter(r => r.status === 'success').length, // Contar releases com status "success"
     companies: Array.from(new Set(releases.map(r => r.companyName))).length
   };
 
@@ -316,7 +316,7 @@ export default function Dashboard() {
           <div className="glass-card rounded-xl p-6 border border-white/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Tutoriais Ativos</p>
+                <p className="text-sm text-gray-600">Tutoriais Concluídos</p>
                 <p className="text-2xl font-semibold text-nextest-dark" data-testid="stat-active">{stats.active}</p>
               </div>
               <div className="w-12 h-12 bg-nextest-light-blue rounded-lg flex items-center justify-center">
