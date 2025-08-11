@@ -126,8 +126,6 @@ export default function Login() {
       });
       
       console.log('Login response:', response);
-      console.log('Response has user?', !!response.user);
-      console.log('Response message:', response.message);
       
       if (response.user) {
         // Direct login with password - user is authenticated
@@ -135,7 +133,7 @@ export default function Login() {
           title: "Login realizado!",
           description: "Bem-vindo ao Portal de Tutoriais."
         });
-      } else if (response.message && (response.message.includes("enviado") || response.debugCode)) {
+      } else {
         // Code verification needed - redirect to verification screen
         console.log('Redirecting to verification screen');
         setUserEmail(data.email);
@@ -146,9 +144,6 @@ export default function Login() {
             `Código: ${response.debugCode} (problema com email)` : 
             "Verifique seu email e digite o código de verificação na próxima tela."
         });
-      } else {
-        // Unexpected response
-        console.log('Unexpected response, staying on login screen');
       }
     } catch (error: any) {
       console.error('Login error:', error);
