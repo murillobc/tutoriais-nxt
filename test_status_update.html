@@ -1,246 +1,269 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎓 Teste API - Atualização Status Tutorial Release</title>
+    <title>Teste API Status - Portal Tutoriais Nextest</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0075C5 0%, #01283E 100%);
             min-height: 100vh;
         }
+        
         .container {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
+        
         h1 {
-            color: #333;
+            color: #01283E;
             text-align: center;
             margin-bottom: 30px;
+            font-size: 2.5rem;
         }
-        .example-urls {
-            background: #f8f9ff;
-            border: 2px solid #e3e8ff;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 25px;
-            font-size: 14px;
-            color: #4338ca;
-        }
+        
         .form-group {
             margin-bottom: 20px;
         }
+        
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
-            color: #374151;
+            font-weight: bold;
+            color: #01283E;
         }
+        
         input, select, textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e5e7eb;
+            border: 2px solid #e1e5e9;
             border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s;
             box-sizing: border-box;
         }
+        
         input:focus, select:focus, textarea:focus {
+            border-color: #0075C5;
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 117, 197, 0.1);
         }
+        
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0075C5;
             color: white;
+            padding: 15px 30px;
             border: none;
-            padding: 15px 25px;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 18px;
             cursor: pointer;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            transition: transform 0.2s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .result {
+            transition: all 0.3s ease;
+            width: 100%;
             margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            border: 2px solid;
         }
-        .result.success {
-            background: #f0f9ff;
-            border-color: #0ea5e9;
-            color: #0c4a6e;
+        
+        button:hover {
+            background: #005a9e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 117, 197, 0.3);
         }
-        .result.error {
-            background: #fef2f2;
-            border-color: #ef4444;
-            color: #991b1b;
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        .code-block {
-            background: #1f2937;
-            color: #f9fafb;
+        
+        .result {
+            margin-top: 30px;
             padding: 20px;
             border-radius: 8px;
-            margin-top: 25px;
-            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
         }
-        .code-block pre {
-            margin: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.4;
+        
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
         }
-        .warning {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 8px;
+        
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
             padding: 15px;
-            margin-bottom: 20px;
-            color: #92400e;
-            font-weight: 600;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .endpoint-info {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .endpoint-info h3 {
+            margin-top: 0;
+            color: #01283E;
+        }
+        
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎓 Teste de Atualização de Status - Tutorial Release Nextest</h1>
+        <h1>🔗 Teste API Status Tutorial</h1>
         
-        <div class="warning">
-            ⚠️ <strong>IMPORTANTE:</strong> Use o ID da LIBERAÇÃO/REQUISIÇÃO, não do tutorial individual!
-            Uma liberação pode conter múltiplos tutoriais.
+        <div class="info">
+            <strong>🎯 Objetivo:</strong> Testar a API de status para integração com n8n e outros sistemas externos.
+            <br><br>
+            <strong>📡 Endpoint:</strong> <code>POST /api/tutorial-releases/:id/status</code>
         </div>
         
-        <div class="example-urls">
-            <strong>📋 Como obter o ID da Liberação:</strong><br>
-            • <strong>Dashboard:</strong> Copie o ID da lista de liberações<br>
-            • <strong>API:</strong> GET /api/tutorial-releases → campo "id"<br>
-            • <strong>Ao criar:</strong> POST /api/tutorial-releases → retorna o ID<br>
-            • <strong>Formato:</strong> 24727cd9-5d90-4adc-9314-a653b8f41234
+        <div class="endpoint-info">
+            <h3>📋 Informações da API</h3>
+            <p><strong>URL Base:</strong> <code id="baseUrl">https://tutoriais.educanextest.com.br</code></p>
+            <p><strong>Método:</strong> <code>POST</code></p>
+            <p><strong>Headers:</strong> <code>Content-Type: application/json</code></p>
+            <p><strong>Status aceitos:</strong> <code>pending</code>, <code>success</code>, <code>failed</code></p>
         </div>
-
+        
         <form id="statusForm">
             <div class="form-group">
-                <label for="releaseId">ID da Liberação (Tutorial Release):</label>
-                <input type="text" id="releaseId" placeholder="Ex: 24727cd9-5d90-4adc-9314-a653b8f41234">
-                <small style="color: #6b7280; font-size: 12px;">Este ID representa toda a liberação com todos os tutoriais inclusos</small>
+                <label for="tutorialId">ID do Tutorial Release:</label>
+                <input type="text" id="tutorialId" name="tutorialId" 
+                       value="24727cd9-5d90-4adc-9314-a65350eac886" 
+                       placeholder="Digite o ID do tutorial release">
+                <small style="color: #666;">ID de exemplo pré-preenchido do banco de dados</small>
             </div>
-
+            
             <div class="form-group">
                 <label for="status">Novo Status:</label>
-                <select id="status">
-                    <option value="success">✅ Success (Liberação Aprovada)</option>
-                    <option value="pending">⏳ Pending (Liberação Pendente)</option>
-                    <option value="failed">❌ Failed (Liberação Rejeitada)</option>
+                <select id="status" name="status" required>
+                    <option value="">Selecione um status</option>
+                    <option value="pending">Pending (Aguardando)</option>
+                    <option value="success">Success (Sucesso)</option>
+                    <option value="failed">Failed (Falha)</option>
                 </select>
             </div>
-
+            
             <div class="form-group">
-                <label for="message">Mensagem (opcional):</label>
-                <textarea id="message" rows="3" placeholder="Ex: Liberação de tutoriais processada com sucesso pelo sistema externo"></textarea>
+                <label for="message">Mensagem (Opcional):</label>
+                <textarea id="message" name="message" rows="3" 
+                          placeholder="Mensagem adicional para o log (opcional)">Teste da API via interface web - integração n8n</textarea>
             </div>
-
-            <button type="button" onclick="updateStatus()">🚀 Atualizar Status da Liberação</button>
-            <button type="button" onclick="generateCurlCommand()" style="background: #17a2b8;">📋 Gerar Comando cURL</button>
+            
+            <button type="submit" id="submitBtn">🚀 Atualizar Status</button>
         </form>
-
+        
         <div id="result" class="result" style="display: none;"></div>
-
-        <div class="code-block">
-            <strong>💡 Exemplo de Requisição cURL:</strong>
-            <pre id="curlExample">curl -X POST "http://localhost:5000/api/tutorial-releases/SEU_ID_DA_LIBERACAO/status" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "success",
-    "message": "Liberação processada automaticamente"
-  }'</pre>
+        
+        <div class="endpoint-info" style="margin-top: 30px;">
+            <h3>💡 Para integração com n8n:</h3>
+            <p>1. <strong>Webhook URL:</strong> Configure seu n8n para receber dados</p>
+            <p>2. <strong>HTTP Request Node:</strong> Use esta API para atualizar status</p>
+            <p>3. <strong>Payload exemplo:</strong></p>
+            <code style="display: block; white-space: pre; background: #f8f9fa; padding: 10px; margin-top: 10px; border-radius: 4px;">{
+  "tutorialId": "seu-tutorial-id",
+  "status": "success",
+  "message": "Atualizado via n8n"
+}</code>
         </div>
     </div>
 
     <script>
-        async function updateStatus() {
-            const releaseId = document.getElementById('releaseId').value.trim();
+        // Detectar ambiente (desenvolvimento vs produção)
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const baseUrl = isLocalhost ? 'http://localhost:5000' : 'https://tutoriais.educanextest.com.br';
+        document.getElementById('baseUrl').textContent = baseUrl;
+        
+        document.getElementById('statusForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            
+            // Desabilitar botão durante o teste
+            submitBtn.disabled = true;
+            submitBtn.textContent = '🔄 Testando...';
+            
+            // Obter dados do formulário
+            const tutorialId = document.getElementById('tutorialId').value.trim();
             const status = document.getElementById('status').value;
             const message = document.getElementById('message').value.trim();
-            const resultDiv = document.getElementById('result');
-
-            if (!releaseId) {
-                showResult('Erro: Por favor, insira o ID da liberação (tutorial release)', 'error');
+            
+            if (!tutorialId || !status) {
+                showResult('error', 'Por favor, preencha o ID do tutorial e o status.');
+                resetButton();
                 return;
             }
-
-            const payload = { status };
-            if (message) {
-                payload.message = message;
-            }
-
+            
             try {
-                showResult('🔄 Enviando requisição para atualizar status da liberação...', 'success');
-                
-                const response = await fetch(`http://localhost:5000/api/tutorial-releases/${releaseId}/status`, {
+                // Fazer requisição para a API
+                const response = await fetch(`${baseUrl}/api/tutorial-releases/${tutorialId}/status`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        status: status,
+                        message: message || undefined
+                    })
                 });
-
-                const result = await response.json();
-
+                
+                const responseData = await response.json();
+                
                 if (response.ok) {
-                    showResult(`✅ Sucesso! Status da liberação atualizado!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}\n\nID da Liberação: ${releaseId}`, 'success');
+                    showResult('success', `✅ Status atualizado com sucesso!\n\nResposta da API:\n${JSON.stringify(responseData, null, 2)}`);
                 } else {
-                    showResult(`❌ Erro ao atualizar status da liberação!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}`, 'error');
+                    showResult('error', `❌ Erro na API (${response.status}):\n\n${JSON.stringify(responseData, null, 2)}`);
                 }
+                
             } catch (error) {
-                showResult(`❌ Erro de conexão!\n\nErro: ${error.message}\n\nVerifique se o servidor está rodando em http://localhost:5000`, 'error');
+                showResult('error', `❌ Erro de conexão:\n\n${error.message}\n\nVerifique se o servidor está rodando em: ${baseUrl}`);
             }
-        }
-
-        function generateCurlCommand() {
-            const releaseId = document.getElementById('releaseId').value.trim() || 'SEU_ID_DA_LIBERACAO';
-            const status = document.getElementById('status').value;
-            const message = document.getElementById('message').value.trim();
-
-            const payload = { status };
-            if (message) {
-                payload.message = message;
-            }
-
-            const curlCommand = `curl -X POST "http://localhost:5000/api/tutorial-releases/${releaseId}/status" \\
-  -H "Content-Type: application/json" \\
-  -d '${JSON.stringify(payload)}'`;
-
-            document.getElementById('curlExample').textContent = curlCommand;
-            showResult(`📋 Comando cURL gerado!\n\nPara usar em produção, substitua:\nhttp://localhost:5000 → https://seu-dominio.com\n\nLembre-se: use sempre o ID da LIBERAÇÃO, não do tutorial individual!`, 'success');
-        }
-
-        function showResult(message, type) {
+            
+            resetButton();
+        });
+        
+        function showResult(type, message) {
             const resultDiv = document.getElementById('result');
-            resultDiv.textContent = message;
             resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
             resultDiv.style.display = 'block';
             resultDiv.scrollIntoView({ behavior: 'smooth' });
         }
-
-        // Auto-fill com exemplo se estiver vazio
-        document.getElementById('releaseId').value = '24727cd9-5d90-4adc-9314-a653b8f41234';
+        
+        function resetButton() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🚀 Atualizar Status';
+        }
+        
+        // Pré-popular com dados de exemplo
+        window.addEventListener('load', function() {
+            document.getElementById('status').value = 'success';
+        });
     </script>
 </body>
 </html>
