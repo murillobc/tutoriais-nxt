@@ -6,7 +6,6 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<any>;
-  verify: (email: string, code: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   forgotPassword: (data: ForgotPasswordRequest) => Promise<any>;
   resetPassword: (data: ResetPasswordRequest) => Promise<void>;
@@ -40,14 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const verifyMutation = useMutation({
-    mutationFn: ({ email, code }: { email: string; code: string }) => 
-      auth.verify({ email, code }),
-    onSuccess: (data) => {
-      setUser(data.user);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-    },
-  });
+
 
   const registerMutation = useMutation({
     mutationFn: (data: RegisterRequest) => auth.register(data),
@@ -76,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     isLoading,
     login: (data: LoginRequest) => loginMutation.mutateAsync(data),
-    verify: (email: string, code: string) => verifyMutation.mutateAsync({ email, code }),
     register: (data: RegisterRequest) => registerMutation.mutateAsync(data),
     forgotPassword: (data: ForgotPasswordRequest) => forgotPasswordMutation.mutateAsync(data),
     resetPassword: (data: ResetPasswordRequest) => resetPasswordMutation.mutateAsync(data),

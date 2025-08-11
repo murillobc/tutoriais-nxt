@@ -16,8 +16,7 @@ const loginSchema = z.object({
   email: z.string().email().refine(email => email.endsWith('@nextest.com.br'), {
     message: 'Email deve ser do domínio @nextest.com.br'
   }),
-  password: z.string().optional(), // If provided, use password login
-  loginMethod: z.enum(["password", "code"]).default("code")
+  password: z.string().min(1, "Senha é obrigatória")
 });
 
 const verifySchema = z.object({
@@ -47,14 +46,12 @@ const registerSchema = z.object({
     message: 'Email deve ser do domínio @nextest.com.br'
   }),
   department: z.string().min(1),
-  password: z.string().min(6).optional(), // Optional password
-  confirmPassword: z.string().optional()
-}).refine(data => {
-  if (data.password && data.password !== data.confirmPassword) {
-    return false;
-  }
-  return true;
-}, { message: "Senhas não coincidem", path: ["confirmPassword"] });
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"]
+});
 
 const tutorialReleaseSchema = z.object({
   clientName: z.string().min(1),
@@ -75,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password, loginMethod } = loginSchema.parse(req.body);
+      const { email, password } = loginSchema.parse(req.body);
       
       // Check if user exists
       const user = await storage.getUserByEmail(email);
@@ -83,76 +80,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Usuário não encontrado. Crie uma conta primeiro." });
       }
 
-      if (loginMethod === "password") {
-        // Password login
-        if (!password) {
-          return res.status(400).json({ message: "Senha é obrigatória para login com senha" });
-        }
-        
-        if (!user.password) {
-          return res.status(400).json({ message: "Usuário não possui senha cadastrada. Use o login por código." });
-        }
-
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-          return res.status(400).json({ message: "Senha incorreta" });
-        }
-
-        // Set session for password login
-        req.session = req.session || {};
-        (req.session as any).userId = user.id;
-        
-        res.json({ user, message: "Login realizado com sucesso" });
-      } else {
-        // Email code login
-        const code = generateVerificationCode();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-        await storage.createVerificationCode({
-          email,
-          code,
-          expiresAt
-        });
-
-        try {
-          await sendVerificationCode(email, code);
-          res.json({ message: "Código de verificação enviado" });
-        } catch (emailError) {
-          console.error('Email sending failed, but code created:', emailError);
-          res.json({ 
-            message: "Código de verificação gerado. Verifique o console para o código (email não enviado)",
-            debugCode: code // For debugging only - remove in production
-          });
-        }
+      if (!user.password) {
+        return res.status(400).json({ message: "Usuário não possui senha cadastrada." });
       }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Senha incorreta" });
+      }
+
+      // Set session for login
+      req.session = req.session || {};
+      (req.session as any).userId = user.id;
+      
+      res.json({ user, message: "Login realizado com sucesso" });
     } catch (error) {
       console.error('Login error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Erro no login" });
     }
   });
 
-  app.post("/api/auth/verify", async (req, res) => {
-    try {
-      const { email, code } = verifySchema.parse(req.body);
-      
-      const verificationCode = await storage.getValidVerificationCode(email, code);
-      if (!verificationCode) {
-        return res.status(400).json({ message: "Código inválido ou expirado" });
-      }
 
-      await storage.markVerificationCodeAsUsed(verificationCode.id);
-      const user = await storage.getUserByEmail(email);
-
-      // In a real app, you'd set up proper session management here
-      req.session = req.session || {};
-      (req.session as any).userId = user?.id;
-
-      res.json({ user });
-    } catch (error) {
-      console.error('Verify error:', error);
-      res.status(400).json({ message: error instanceof Error ? error.message : "Erro na verificação" });
-    }
-  });
 
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -164,8 +112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Usuário já existe" });
       }
 
-      // Hash password if provided
-      const hashedPassword = userData.password ? await bcrypt.hash(userData.password, 10) : undefined;
+      // Hash password
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
 
       const user = await storage.createUser({
         name: userData.name,

@@ -11,21 +11,15 @@ export interface User {
 
 export interface LoginRequest {
   email: string;
-  password?: string;
-  loginMethod?: 'password' | 'code';
-}
-
-export interface VerifyRequest {
-  email: string;
-  code: string;
+  password: string;
 }
 
 export interface RegisterRequest {
   name: string;
   email: string;
   department: string;
-  password?: string;
-  confirmPassword?: string;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface ForgotPasswordRequest {
@@ -45,10 +39,7 @@ export const auth = {
     return response.json();
   },
 
-  async verify(data: VerifyRequest) {
-    const response = await apiRequest("POST", "/api/auth/verify", data);
-    return response.json();
-  },
+
 
   async register(data: RegisterRequest) {
     const response = await apiRequest("POST", "/api/auth/register", data);
