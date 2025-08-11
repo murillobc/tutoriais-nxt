@@ -1,0 +1,81 @@
+version: "3.8"
+
+x-base: &base
+  image: node:18-alpine
+  working_dir: /app
+  restart: 'no'
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgresql://postgres:cQM6q7g505tP@postgres_tuto_nxt_postgres:5432/postgres
+    SESSION_SECRET: ${SESSION_SECRET}
+    SMTP_HOST: ${SMTP_HOST}
+    SMTP_PORT: ${SMTP_PORT}
+    SMTP_USER: ${SMTP_USER}
+    SMTP_PASS: ${SMTP_PASS}
+    SMTP_FROM: ${SMTP_FROM}
+    WEBHOOK_URL: ${WEBHOOK_URL}
+  networks:
+    - network_public
+
+services:
+  # Aplicação principal
+  nextest-app:
+    <<: *base
+    command: |
+      sh -c "
+        apk add --no-cache git python3 make g++ &&
+        rm -rf /tmp/app &&
+        git clone https://github.com/murillobc/tutoriais-nxt.git /tmp/app &&
+        cp -r /tmp/app/* . &&
+        echo '🔍 FORÇANDO NODE_ENV=development para instalar devDeps:' &&
+        export NODE_ENV=development &&
+        npm install &&
+        echo '🔍 Criando mock do vite.ts para produção:' &&
+        echo 'import express from \"express\";import fs from \"fs\";import path from \"path\";import{fileURLToPath}from\"url\";const __dirname=path.dirname(fileURLToPath(import.meta.url));export function log(m,s=\"express\"){console.log(new Date().toLocaleTimeString(\"en-US\",{hour:\"numeric\",minute:\"2-digit\",second:\"2-digit\",hour12:true})+\" [\"+s+\"] \"+m);}export async function setupVite(){log(\"Vite skipped in production\",\"docker\");}export function serveStatic(app){const distPath=path.resolve(__dirname,\"public\");if(!fs.existsSync(distPath)){throw new Error(\"Could not find build directory: \"+distPath);}app.use(express.static(distPath));app.use(\"*\",(_req,res)=>{res.sendFile(path.resolve(distPath,\"index.html\"));});}' > server/vite.ts &&
+        echo '🔍 ARQUIVO NOVO - Listando binários instalados:' &&
+        ls -la node_modules/.bin/ &&
+        echo '🔍 Verificando se vite existe:' &&
+        test -f node_modules/.bin/vite && echo '✅ Vite encontrado!' || echo '❌ Vite NÃO encontrado!' &&
+        echo '🔍 Tentando build manual do frontend:' &&
+        node_modules/.bin/vite build client --config vite.config.ts &&
+        echo '🔍 Build do backend:' &&
+        node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:vite &&
+        echo '🔍 Limpando devDependencies:' &&
+        npm prune --production &&
+        echo '🔍 Mudando NODE_ENV para production antes de rodar:' &&
+        export NODE_ENV=production &&
+        export PORT=3000 &&
+        echo '🚀 Iniciando aplicação na porta 3000:' &&
+        node dist/index.js
+      "
+    restart: always
+    networks:
+      - network_public
+    volumes:
+      - nextest_logs:/app/logs
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.nextest.rule=Host(`tutoriais.automai.com.br`)
+        - traefik.http.routers.nextest.entrypoints=websecure
+        - traefik.http.routers.nextest.tls.certresolver=letsencryptresolver
+        - traefik.http.services.nextest.loadbalancer.server.port=3000
+        - traefik.http.services.nextest.loadbalancer.passHostHeader=true
+
+  # Redis para cache
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - network_public
+    volumes:
+      - redis_data:/data
+
+volumes:
+  nextest_logs:
+  redis_data:
+
+networks:
+  network_public:
+    external: true
+    name: network_public

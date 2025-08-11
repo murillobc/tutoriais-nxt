@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  nextest-backend:
+    image: node:18-alpine
+    working_dir: /tmp/app
+    command: >
+      sh -c "
+      apk add --no-cache git python3 make g++ &&
+      git clone https://github.com/murillobc/tutoriais-nxt.git . &&
+      npm ci &&
+      rm -f vite.config.ts &&
+      echo 'import express from \"express\";import fs from \"fs\";import path from \"path\";export function log(m,s=\"express\"){console.log(new Date().toLocaleTimeString(\"en-US\",{hour:\"numeric\",minute:\"2-digit\",second:\"2-digit\",hour12:true})+\" [\"+s+\"] \"+m);}export async function setupVite(){log(\"Vite skipped in production\",\"docker\");}export function serveStatic(app){const distPath=path.resolve(import.meta.dirname,\"public\");if(!fs.existsSync(distPath)){throw new Error(\"Could not find build directory: \"+distPath);}app.use(express.static(distPath));app.use(\"*\",(_req,res)=>{res.sendFile(path.resolve(distPath,\"index.html\"));});}' > server/vite.ts &&
+      npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:express --external:fs --external:path &&
+      echo '🚀 Build concluído (com vite.ts mock), iniciando servidor...' &&
+      node dist/index.js
+      "
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:cQM6q7g505tP@postgres_tuto_nxt_postgres:5432/postgres
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+    restart: always
+    networks:
+      - network_public
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.nextest-api.rule=Host(`api.automai.com.br`)
+        - traefik.http.routers.nextest-api.entrypoints=websecure
+        - traefik.http.routers.nextest-api.tls.certresolver=letsencryptresolver
+        - traefik.http.services.nextest-api.loadbalancer.server.port=3000
+
+networks:
+  network_public:
+    external: true
+    name: network_public
