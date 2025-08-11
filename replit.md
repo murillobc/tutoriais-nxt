@@ -36,12 +36,14 @@ Preferred communication style: Simple, everyday language.
 - **Search and Filtering**: Client and release search functionality with status filtering
 - **Input Validation**: CPF and phone number masking with comprehensive form validation
 - **HTTP Status API**: External systems can update tutorial release status via POST /api/tutorial-releases/:id/status endpoint
+- **Docker Support**: Full Docker and Docker Compose configuration for VPS deployment with Traefik reverse proxy
+- **Production Environment**: Configured for educanextest.com.br domain with SSL/TLS support
 
 # External Dependencies
 
 ## Database
-- **PostgreSQL**: Primary database using Neon serverless PostgreSQL with connection pooling
-- **Drizzle Kit**: Database migrations and schema management tools
+- **Neon PostgreSQL**: Serverless PostgreSQL with WebSocket support for production deployment
+- **Drizzle Kit**: Database migrations and schema management tools with migrations output to ./migrations directory
 
 ## Email Services
 - **Resend SMTP**: Configured to use smtp.resend.com on port 587 for reliable email delivery
