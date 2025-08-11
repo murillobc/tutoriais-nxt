@@ -13,7 +13,7 @@ import {
   type InsertTutorialRelease
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gt, desc, inArray } from "drizzle-orm";
+import { eq, and, gt, desc, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -39,6 +39,8 @@ export interface IStorage {
   updateTutorialReleaseStatus(id: string, status: string): Promise<void>;
   getTutorialReleasesByStatus(status: string): Promise<TutorialRelease[]>;
   getTutorialReleaseStats(): Promise<any>;
+  checkAndUpdateExpiredReleases(): Promise<void>;
+  getTutorialReleasesForReport(filters?: any): Promise<(TutorialRelease & { user: User })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -142,6 +144,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTutorialReleases(): Promise<(TutorialRelease & { user: User })[]> {
+    // Verificar e atualizar releases expirados antes de buscar dados
+    await this.checkAndUpdateExpiredReleases();
+    
     const results = await db
       .select({
         id: tutorialReleases.id,
@@ -155,6 +160,7 @@ export class DatabaseStorage implements IStorage {
         companyRole: tutorialReleases.companyRole,
         tutorialIds: tutorialReleases.tutorialIds,
         status: tutorialReleases.status,
+        expirationDate: tutorialReleases.expirationDate,
         createdAt: tutorialReleases.createdAt,
         user: users
       })
@@ -166,9 +172,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTutorialReleaseStatus(id: string, status: string): Promise<void> {
+    const updateData: any = { status };
+    
+    // Se o status for "success", definir data de expiração para 90 dias
+    if (status === 'success') {
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + 90);
+      updateData.expirationDate = expirationDate;
+    }
+    
     await db
       .update(tutorialReleases)
-      .set({ status })
+      .set(updateData)
       .where(eq(tutorialReleases.id, id));
   }
 
@@ -192,13 +207,76 @@ export class DatabaseStorage implements IStorage {
       total: results.length,
       pending: results.filter(r => r.status === 'pending').length,
       success: results.filter(r => r.status === 'success').length,
-      failed: results.filter(r => r.status === 'failed').length
+      failed: results.filter(r => r.status === 'failed').length,
+      expired: results.filter(r => r.status === 'expired').length
     };
 
     return {
       ...stats,
       success_rate: stats.total > 0 ? Math.round((stats.success / stats.total) * 100) : 0
     };
+  }
+
+  async checkAndUpdateExpiredReleases(): Promise<void> {
+    const now = new Date();
+    
+    // Buscar releases com status 'success' e data de expiração vencida
+    const expiredReleases = await db
+      .select()
+      .from(tutorialReleases)
+      .where(
+        and(
+          eq(tutorialReleases.status, 'success'),
+          sql`${tutorialReleases.expirationDate} IS NOT NULL`,
+          sql`${tutorialReleases.expirationDate} <= ${now}`
+        )
+      );
+
+    // Atualizar status para 'expired'
+    if (expiredReleases.length > 0) {
+      const expiredIds = expiredReleases.map(r => r.id);
+      await db
+        .update(tutorialReleases)
+        .set({ status: 'expired' })
+        .where(inArray(tutorialReleases.id, expiredIds));
+      
+      console.log(`✅ ${expiredReleases.length} tutoriais marcados como expirados`);
+    }
+  }
+
+  async getTutorialReleasesForReport(filters?: any): Promise<(TutorialRelease & { user: User })[]> {
+    const baseQuery = db
+      .select({
+        id: tutorialReleases.id,
+        userId: tutorialReleases.userId,
+        clientName: tutorialReleases.clientName,
+        clientCpf: tutorialReleases.clientCpf,
+        clientEmail: tutorialReleases.clientEmail,
+        clientPhone: tutorialReleases.clientPhone,
+        companyName: tutorialReleases.companyName,
+        companyDocument: tutorialReleases.companyDocument,
+        companyRole: tutorialReleases.companyRole,
+        tutorialIds: tutorialReleases.tutorialIds,
+        status: tutorialReleases.status,
+        expirationDate: tutorialReleases.expirationDate,
+        createdAt: tutorialReleases.createdAt,
+        user: users
+      })
+      .from(tutorialReleases)
+      .leftJoin(users, eq(tutorialReleases.userId, users.id));
+
+    // Aplicar filtros se fornecidos
+    let results;
+    if (filters?.status && filters.status !== 'all') {
+      results = await baseQuery
+        .where(eq(tutorialReleases.status, filters.status))
+        .orderBy(desc(tutorialReleases.createdAt));
+    } else {
+      results = await baseQuery
+        .orderBy(desc(tutorialReleases.createdAt));
+    }
+    
+    return results.filter(result => result.user !== null) as (TutorialRelease & { user: User })[];
   }
 }
 

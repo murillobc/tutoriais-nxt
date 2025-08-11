@@ -42,7 +42,8 @@ export const tutorialReleases = pgTable("tutorial_releases", {
   companyDocument: text("company_document").notNull(), // CNPJ da empresa
   companyRole: text("company_role").notNull(),
   tutorialIds: jsonb("tutorial_ids").notNull().$type<string[]>(),
-  status: text("status").default("pending").notNull(), // pending, success, failed
+  status: text("status").default("pending").notNull(), // pending, success, failed, expired
+  expirationDate: timestamp("expiration_date"), // Data de expiração (90 dias após success)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

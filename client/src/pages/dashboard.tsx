@@ -14,7 +14,8 @@ import {
   Building,
   ChevronLeft,
   ChevronRight,
-  User
+  User,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,9 +34,11 @@ interface TutorialRelease {
   clientEmail: string;
   clientPhone?: string;
   companyName: string;
+  companyDocument: string;
   companyRole: string;
   tutorialIds: string[];
   status: string;
+  expirationDate?: string | null;
   createdAt: string;
   user: {
     id: string;
@@ -118,11 +121,131 @@ export default function Dashboard() {
   };
 
   const getTutorialNames = (tutorialIds: string[]) => {
+    const tutorialList = Array.isArray(tutorials) ? tutorials : [];
     const names = tutorialIds.map(id => {
-      const tutorial = tutorials.find((t: any) => t.id === id);
+      const tutorial = tutorialList.find((t: any) => t.id === id);
       return tutorial ? tutorial.name : id;
     });
     return names.join(', ');
+  };
+
+  const formatExpirationDate = (date: string | null) => {
+    if (!date) return "Não definida";
+    const expDate = new Date(date);
+    const now = new Date();
+    const isExpired = expDate < now;
+    
+    return (
+      <span className={isExpired ? "text-red-600 font-medium" : "text-gray-600"}>
+        {expDate.toLocaleDateString('pt-BR')}
+        {isExpired && " (Expirado)"}
+      </span>
+    );
+  };
+
+  const generatePDFReport = async () => {
+    try {
+      const response = await fetch("/api/reports/tutorial-releases", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (!response.ok) throw new Error("Erro ao buscar dados do relatório");
+      
+      const data = await response.json();
+      
+      // Importar dinamicamente jsPDF e jspdf-autotable
+      const { jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
+      
+      const doc = new jsPDF();
+      
+      // Título
+      doc.setFontSize(16);
+      doc.text('Relatório de Liberações de Tutoriais', 20, 20);
+      
+      // Data do relatório
+      doc.setFontSize(10);
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 20, 30);
+      
+      // Preparar dados da tabela
+      const tableData = data.map((release: any) => [
+        release.clientName,
+        release.clientCpf,
+        release.companyName,
+        release.status === 'success' ? 'Sucesso' : 
+        release.status === 'pending' ? 'Pendente' :
+        release.status === 'failed' ? 'Falha' : 'Expirado',
+        formatDate(release.createdAt),
+        release.expirationDate ? formatDate(release.expirationDate) : 'N/A',
+        release.user.name
+      ]);
+      
+      // Gerar tabela
+      (doc as any).autoTable({
+        head: [['Cliente', 'CPF', 'Empresa', 'Status', 'Data Criação', 'Data Expiração', 'Responsável']],
+        body: tableData,
+        startY: 40,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [0, 117, 197] }
+      });
+      
+      doc.save('relatorio-tutoriais.pdf');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Erro ao gerar relatório PDF');
+    }
+  };
+
+  const generateExcelReport = async () => {
+    try {
+      const response = await fetch("/api/reports/tutorial-releases", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (!response.ok) throw new Error("Erro ao buscar dados do relatório");
+      
+      const data = await response.json();
+      
+      // Importar dinamicamente XLSX
+      const XLSX = await import('xlsx');
+      
+      // Preparar dados para Excel
+      const worksheetData = [
+        ['Cliente', 'CPF', 'Email', 'Empresa', 'CNPJ', 'Cargo', 'Status', 'Data Criação', 'Data Expiração', 'Responsável']
+      ];
+      
+      data.forEach((release: any) => {
+        worksheetData.push([
+          release.clientName,
+          release.clientCpf,
+          release.clientEmail,
+          release.companyName,
+          release.companyDocument,
+          release.companyRole,
+          release.status === 'success' ? 'Sucesso' : 
+          release.status === 'pending' ? 'Pendente' :
+          release.status === 'failed' ? 'Falha' : 'Expirado',
+          formatDate(release.createdAt),
+          release.expirationDate ? formatDate(release.expirationDate) : 'N/A',
+          release.user.name
+        ]);
+      });
+      
+      // Criar workbook e worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      
+      // Adicionar worksheet ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório Tutoriais');
+      
+      // Salvar arquivo
+      XLSX.writeFile(workbook, 'relatorio-tutoriais.xlsx');
+    } catch (error) {
+      console.error('Erro ao gerar Excel:', error);
+      alert('Erro ao gerar relatório Excel');
+    }
   };
 
   return (
@@ -267,6 +390,30 @@ export default function Dashboard() {
                   <SelectItem value="failed">Falha</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Report Buttons */}
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={generatePDFReport}
+                  className="bg-white/50"
+                  data-testid="button-export-pdf"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={generateExcelReport}
+                  className="bg-white/50"
+                  data-testid="button-export-excel"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Excel
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -284,7 +431,8 @@ export default function Dashboard() {
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Cliente</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Empresa</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Tutoriais</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Data</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Data Criação</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Data Expiração</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Responsável</th>
                   </tr>
@@ -310,6 +458,11 @@ export default function Dashboard() {
                       <td className="py-4 px-4">
                         <p className="text-sm text-gray-600">{formatDate(release.createdAt)}</p>
                         <p className="text-xs text-gray-500">{formatTime(release.createdAt)}</p>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm">
+                          {formatExpirationDate(release.expirationDate)}
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         {getStatusBadge(release.status)}

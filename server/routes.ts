@@ -167,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
-        await sendVerificationCode(email, code, "reset");
+        await sendPasswordResetCode(email, code);
         res.json({ message: "Código de redefinição de senha enviado" });
       } catch (emailError) {
         console.error('Email sending failed, but code created:', emailError);
@@ -405,6 +405,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get release stats error:', error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Erro ao buscar estatísticas" });
+    }
+  });
+
+  // Endpoint para gerar relatórios
+  app.get("/api/reports/tutorial-releases", async (req, res) => {
+    try {
+      if (!(req.session as any)?.userId) {
+        return res.status(401).json({ message: "Não autorizado" });
+      }
+
+      const { status, format = 'json' } = req.query;
+      
+      const filters = status ? { status } : {};
+      const releases = await storage.getTutorialReleasesForReport(filters);
+      
+      if (format === 'json') {
+        res.json(releases);
+      } else {
+        // Para outros formatos, retornar dados para processamento no frontend
+        res.json({ data: releases, format });
+      }
+    } catch (error) {
+      console.error('Report generation error:', error);
+      res.status(500).json({ message: "Erro ao gerar relatório" });
     }
   });
 
