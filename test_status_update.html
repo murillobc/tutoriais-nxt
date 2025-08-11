@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Atualização de Status - Tutorial Nextest</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0075C5;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus, select:focus, textarea:focus {
+            border-color: #0075C5;
+            outline: none;
+        }
+        button {
+            background: #60AB4B;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #4a8c3a;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .example-urls {
+            background: #e7f3ff;
+            padding: 15px;
+            border-left: 4px solid #0075C5;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Teste de Atualização de Status - Tutorial Nextest</h1>
+        
+        <div class="example-urls">
+            <strong>📋 Exemplo de IDs de Tutorial Release:</strong><br>
+            • Você pode obter IDs reais acessando o dashboard e copiando da URL ou dos logs<br>
+            • Formato típico: 24727cd9-5d90-4adc-9314-a653b8f41234
+        </div>
+
+        <form id="statusForm">
+            <div class="form-group">
+                <label for="tutorialId">ID do Tutorial Release:</label>
+                <input type="text" id="tutorialId" placeholder="Ex: 24727cd9-5d90-4adc-9314-a653b8f41234">
+            </div>
+
+            <div class="form-group">
+                <label for="status">Novo Status:</label>
+                <select id="status">
+                    <option value="success">✅ Success (Liberado)</option>
+                    <option value="pending">⏳ Pending (Pendente)</option>
+                    <option value="failed">❌ Failed (Falha)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Mensagem (opcional):</label>
+                <textarea id="message" rows="3" placeholder="Ex: Tutorial liberado automaticamente pelo sistema externo"></textarea>
+            </div>
+
+            <button type="button" onclick="updateStatus()">🚀 Atualizar Status</button>
+            <button type="button" onclick="generateCurlCommand()" style="background: #17a2b8;">📋 Gerar Comando cURL</button>
+        </form>
+
+        <div id="result" class="result" style="display: none;"></div>
+
+        <div class="code-block">
+            <strong>💡 Exemplo de Requisição cURL:</strong>
+            <pre id="curlExample">curl -X POST "http://localhost:5000/api/tutorial-releases/SEU_ID_AQUI/status" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "success",
+    "message": "Tutorial liberado automaticamente"
+  }'</pre>
+        </div>
+
+        <div class="code-block">
+            <strong>🔗 Para usar em produção, substitua:</strong>
+            <pre>http://localhost:5000 → https://seu-dominio.com</pre>
+        </div>
+    </div>
+
+    <script>
+        async function updateStatus() {
+            const tutorialId = document.getElementById('tutorialId').value.trim();
+            const status = document.getElementById('status').value;
+            const message = document.getElementById('message').value.trim();
+            const resultDiv = document.getElementById('result');
+
+            if (!tutorialId) {
+                showResult('Erro: Por favor, insira o ID do tutorial release', 'error');
+                return;
+            }
+
+            const payload = { status };
+            if (message) {
+                payload.message = message;
+            }
+
+            try {
+                showResult('🔄 Enviando requisição...', 'success');
+                
+                const response = await fetch(`http://localhost:5000/api/tutorial-releases/${tutorialId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showResult(`✅ Sucesso!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}`, 'success');
+                } else {
+                    showResult(`❌ Erro!\n\nResposta: ${JSON.stringify(result, null, 2)}\n\nStatus Code: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Erro de conexão!\n\nErro: ${error.message}\n\nVerifique se o servidor está rodando em http://localhost:5000`, 'error');
+            }
+        }
+
+        function generateCurlCommand() {
+            const tutorialId = document.getElementById('tutorialId').value.trim() || 'SEU_ID_AQUI';
+            const status = document.getElementById('status').value;
+            const message = document.getElementById('message').value.trim();
+
+            const payload = { status };
+            if (message) {
+                payload.message = message;
+            }
+
+            const curlCommand = `curl -X POST "http://localhost:5000/api/tutorial-releases/${tutorialId}/status" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(payload)}'`;
+
+            document.getElementById('curlExample').textContent = curlCommand;
+            showResult(`📋 Comando cURL gerado e copiado para a seção abaixo!\n\nPara usar em produção, substitua:\nhttp://localhost:5000 → https://seu-dominio.com`, 'success');
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Auto-fill com exemplo se estiver vazio
+        document.getElementById('tutorialId').value = '24727cd9-5d90-4adc-9314-a653b8f41234';
+        document.getElementById('message').value = 'Tutorial liberado automaticamente pelo sistema externo';
+    </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ Preferred communication style: Simple, everyday language.
 ## Backend Architecture
 - **Runtime**: Node.js with Express.js framework using TypeScript
 - **Database ORM**: Drizzle ORM with PostgreSQL dialect for type-safe database operations
-- **Authentication**: Email-based verification system with 6-digit codes, domain-restricted to @nextest.com.br
+- **Authentication**: Email/password system with forgot password functionality, domain-restricted to @nextest.com.br
 - **Email Service**: Nodemailer for sending verification codes with HTML email templates
 - **API Design**: RESTful endpoints with structured error handling and request logging middleware
 
@@ -35,6 +35,7 @@ Preferred communication style: Simple, everyday language.
 - **Dashboard Analytics**: Display statistics for total releases, monthly counts, active releases, and company metrics
 - **Search and Filtering**: Client and release search functionality with status filtering
 - **Input Validation**: CPF and phone number masking with comprehensive form validation
+- **HTTP Status API**: External systems can update tutorial release status via POST /api/tutorial-releases/:id/status endpoint
 
 # External Dependencies
 
@@ -43,8 +44,8 @@ Preferred communication style: Simple, everyday language.
 - **Drizzle Kit**: Database migrations and schema management tools
 
 ## Email Services
-- **SMTP Configuration**: Environment-based email service setup for verification code delivery
-- **Nodemailer**: Email sending library with HTML template support
+- **Resend SMTP**: Configured to use smtp.resend.com on port 587 for reliable email delivery
+- **Nodemailer**: Email sending library with HTML template support and Resend integration
 
 ## UI Framework
 - **Radix UI**: Accessible component primitives for complex UI elements
