@@ -12,19 +12,17 @@ interface EmailConfig {
 
 const port = parseInt(process.env.SMTP_PORT || '587');
 const emailConfig = {
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  host: process.env.SMTP_ADDRESS || 'smtp.resend.com',
   port: port,
   secure: port === 465, // Use secure connection for port 465 (SMTPS)
   auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
+    user: process.env.SMTP_USERNAME || 'resend',
+    pass: process.env.SMTP_PASSWORD || '',
   },
-  // Additional configuration for better delivery
+  // Resend SMTP configuration
   tls: {
-    rejectUnauthorized: false, // Accept self-signed certificates
-    ciphers: 'SSLv3'
-  },
-  authMethod: 'PLAIN'
+    rejectUnauthorized: true,
+  }
 } as any;
 
 // Email service is configured
@@ -43,10 +41,10 @@ transporter.verify((error, success) => {
 export async function sendVerificationCode(email: string, code: string, type: 'verification' | 'reset' = 'verification'): Promise<void> {
   console.log('📧 Tentando enviar email para:', email);
   console.log('🔧 Config SMTP:', {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: process.env.SMTP_ADDRESS || 'smtp.resend.com',
     port: process.env.SMTP_PORT || '587',
-    user: process.env.SMTP_USER || 'não configurado',
-    from: process.env.SMTP_FROM || 'Portal Nextest <noreply@nextest.com.br>'
+    user: process.env.SMTP_USERNAME || 'resend',
+    from: process.env.SMTP_FROM || 'Portal Nextest <no-reply@nextest.com.br>'
   });
   
   try {
@@ -61,7 +59,7 @@ export async function sendVerificationCode(email: string, code: string, type: 'v
       : 'Use o código abaixo para acessar o Portal de Tutoriais Nextest:';
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'Portal Nextest <noreply@nextest.com.br>',
+      from: process.env.SMTP_FROM || 'Portal Nextest <no-reply@nextest.com.br>',
       to: email,
       subject,
       html: `
