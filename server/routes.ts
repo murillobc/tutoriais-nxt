@@ -292,6 +292,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API: Consultar tutorial releases por status
+  app.get("/api/tutorial-releases/status/:status", async (req, res) => {
+    try {
+      const { status } = req.params;
+      
+      if (!['pending', 'success', 'failed'].includes(status)) {
+        return res.status(400).json({ message: "Status inválido. Use: pending, success, failed" });
+      }
+
+      const releases = await storage.getTutorialReleasesByStatus(status);
+      
+      console.log(`API consulta tutorial releases com status: ${status} - encontrados: ${releases.length}`);
+      
+      res.json({ 
+        status: status,
+        count: releases.length,
+        releases: releases 
+      });
+    } catch (error) {
+      console.error('Get releases by status error:', error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Erro ao buscar tutorial releases" });
+    }
+  });
+
+  // API: Consultar apenas tutoriais pendentes (endpoint específico para n8n)
+  app.get("/api/tutorial-releases/pending", async (req, res) => {
+    try {
+      const releases = await storage.getTutorialReleasesByStatus('pending');
+      
+      console.log(`API consulta tutoriais pendentes - encontrados: ${releases.length}`);
+      
+      res.json({ 
+        count: releases.length,
+        pending_releases: releases.map(release => ({
+          id: release.id,
+          client_name: release.clientName,
+          client_email: release.clientEmail,
+          client_company: release.companyName,
+          created_at: release.createdAt,
+          status: release.status
+        }))
+      });
+    } catch (error) {
+      console.error('Get pending releases error:', error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Erro ao buscar tutoriais pendentes" });
+    }
+  });
+
+  // API: Estatísticas de status
+  app.get("/api/tutorial-releases/stats", async (req, res) => {
+    try {
+      const stats = await storage.getTutorialReleaseStats();
+      
+      console.log('API consulta estatísticas de tutorial releases');
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Get release stats error:', error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Erro ao buscar estatísticas" });
+    }
+  });
+
   app.get("/api/auth/me", async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;

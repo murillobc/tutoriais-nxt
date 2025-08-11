@@ -37,6 +37,8 @@ export interface IStorage {
   getTutorialReleasesByUser(userId: string): Promise<TutorialRelease[]>;
   getAllTutorialReleases(): Promise<(TutorialRelease & { user: User })[]>;
   updateTutorialReleaseStatus(id: string, status: string): Promise<void>;
+  getTutorialReleasesByStatus(status: string): Promise<TutorialRelease[]>;
+  getTutorialReleaseStats(): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -168,6 +170,35 @@ export class DatabaseStorage implements IStorage {
       .update(tutorialReleases)
       .set({ status })
       .where(eq(tutorialReleases.id, id));
+  }
+
+  async getTutorialReleasesByStatus(status: string): Promise<TutorialRelease[]> {
+    return await db
+      .select()
+      .from(tutorialReleases)
+      .where(eq(tutorialReleases.status, status))
+      .orderBy(desc(tutorialReleases.createdAt));
+  }
+
+  async getTutorialReleaseStats(): Promise<any> {
+    const results = await db
+      .select({
+        status: tutorialReleases.status,
+        count: tutorialReleases.id
+      })
+      .from(tutorialReleases);
+    
+    const stats = {
+      total: results.length,
+      pending: results.filter(r => r.status === 'pending').length,
+      success: results.filter(r => r.status === 'success').length,
+      failed: results.filter(r => r.status === 'failed').length
+    };
+
+    return {
+      ...stats,
+      success_rate: stats.total > 0 ? Math.round((stats.success / stats.total) * 100) : 0
+    };
   }
 }
 
