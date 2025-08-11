@@ -75,9 +75,11 @@ LIMIT 10;
 Após as correções:
 1. Reinicie a aplicação
 2. Tente criar um novo release
-3. Verifique se a coluna "Data Expiração" aparece
+3. Verifique se a coluna "Data Expiração" aparece com data automática (90 dias)
 4. Teste mudança de status via API
 5. Verifique se botões de relatório funcionam
+
+**Nova funcionalidade**: Data de expiração é definida automaticamente na criação (90 dias a partir da data de criação)
 
 ## 📞 Se Ainda Houver Problemas
 

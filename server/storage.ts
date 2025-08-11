@@ -117,6 +117,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease> {
+    // Definir data de expiração automaticamente para 90 dias a partir de hoje
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 90);
+    
     const [tutorialRelease] = await db
       .insert(tutorialReleases)
       .values({
@@ -129,7 +133,8 @@ export class DatabaseStorage implements IStorage {
         companyDocument: release.companyDocument,
         companyRole: release.companyRole,
         tutorialIds: release.tutorialIds,
-        status: release.status || 'pending'
+        status: release.status || 'pending',
+        expirationDate: expirationDate
       })
       .returning();
     return tutorialRelease;
@@ -164,6 +169,7 @@ export class DatabaseStorage implements IStorage {
         companyRole: tutorialReleases.companyRole,
         tutorialIds: tutorialReleases.tutorialIds,
         status: tutorialReleases.status,
+        expirationDate: tutorialReleases.expirationDate,
         createdAt: tutorialReleases.createdAt,
         user: users
       })
@@ -175,18 +181,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTutorialReleaseStatus(id: string, status: string): Promise<void> {
-    const updateData: any = { status };
-    
-    // Se o status for "success", definir data de expiração para 90 dias
-    if (status === 'success') {
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 90);
-      updateData.expirationDate = expirationDate;
-    }
-    
+    // Apenas atualizar o status, data de expiração já foi definida na criação
     await db
       .update(tutorialReleases)
-      .set(updateData)
+      .set({ status })
       .where(eq(tutorialReleases.id, id));
   }
 
@@ -261,6 +259,7 @@ export class DatabaseStorage implements IStorage {
         companyRole: tutorialReleases.companyRole,
         tutorialIds: tutorialReleases.tutorialIds,
         status: tutorialReleases.status,
+        expirationDate: tutorialReleases.expirationDate,
         createdAt: tutorialReleases.createdAt,
         user: users
       })

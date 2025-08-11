@@ -29,12 +29,11 @@ SELECT * FROM (VALUES
 ) AS t(name, description, tag, id_cademi)
 WHERE NOT EXISTS (SELECT 1 FROM tutorials LIMIT 1);
 
--- 3. ATUALIZAR RELEASES EXISTENTES COM STATUS SUCCESS PARA TER DATA DE EXPIRAÇÃO
--- Execute APENAS se quiser definir expiração para releases já existentes com status success
+-- 3. ATUALIZAR RELEASES EXISTENTES PARA TER DATA DE EXPIRAÇÃO (90 dias a partir da criação)
+-- Execute APENAS se quiser definir expiração para releases já existentes
 UPDATE tutorial_releases 
 SET expiration_date = created_at + INTERVAL '90 days'
-WHERE status = 'success' 
-AND expiration_date IS NULL;
+WHERE expiration_date IS NULL;
 
 -- 4. CRIAR FUNÇÃO DE VERIFICAÇÃO DE EXPIRAÇÃO (se não existir)
 CREATE OR REPLACE FUNCTION check_and_update_expired_releases()
