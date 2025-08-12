@@ -64,9 +64,10 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
     enabled: currentStep === 'review',
   });
 
-  const uploadMutation = useMutation({
-    mutationFn: async (releases: any[]) => {
-      return apiRequest("POST", "/api/tutorial-releases/bulk", { releases });
+  const uploadMutation = useMutation<BulkResult, Error, any[]>({
+    mutationFn: async (releases: any[]): Promise<BulkResult> => {
+      const response = await apiRequest("POST", "/api/tutorial-releases/bulk", { releases });
+      return response as BulkResult;
     },
     onSuccess: (data: BulkResult) => {
       setResults(data);
@@ -200,7 +201,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
       return;
     }
 
-    const validClients = importedClients.filter(client => client.isValid);
+    const validClients = (importedClients || []).filter(client => client.isValid);
     const releases = validClients.map(client => ({
       ...client,
       tutorialIds: selectedTutorials
@@ -242,7 +243,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
       tutorial.tag.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const validClientsCount = importedClients.filter(client => client.isValid).length;
+  const validClientsCount = importedClients?.filter(client => client.isValid).length || 0;
 
   if (!isOpen) return null;
 
@@ -320,7 +321,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
                     <User className="h-5 w-5 text-blue-600" />
                     <span className="font-semibold text-blue-900">Total Importado</span>
                   </div>
-                  <p className="text-2xl font-bold text-blue-800">{importedClients.length}</p>
+                  <p className="text-2xl font-bold text-blue-800">{importedClients?.length || 0}</p>
                 </div>
 
                 <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
@@ -336,7 +337,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
                     <AlertTriangle className="h-5 w-5 text-red-600" />
                     <span className="font-semibold text-red-900">Com Erros</span>
                   </div>
-                  <p className="text-2xl font-bold text-red-800">{importedClients.length - validClientsCount}</p>
+                  <p className="text-2xl font-bold text-red-800">{(importedClients?.length || 0) - validClientsCount}</p>
                 </div>
               </div>
 
@@ -406,7 +407,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-nextest-dark">Clientes Importados</h3>
                 <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
-                  {importedClients.map((client, index) => (
+                  {(importedClients || []).map((client, index) => (
                     <div key={index} className={`p-3 border-b border-gray-100 last:border-b-0 ${!client.isValid ? 'bg-red-50' : 'bg-white'}`}>
                       <div className="flex items-center justify-between">
                         <div>
