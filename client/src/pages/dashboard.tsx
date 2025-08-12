@@ -418,7 +418,10 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <p className="text-sm font-medium">{release.companyName}</p>
+                        <div>
+                          <p className="text-sm font-medium">{release.companyName}</p>
+                          <p className="text-xs text-gray-500">{release.companyDocument}</p>
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="text-sm text-gray-700">
