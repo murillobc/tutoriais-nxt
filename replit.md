@@ -2,7 +2,14 @@
 
 This is a tutorial release management system for Nextest, designed to allow employees to create and manage tutorial access for external clients. The application features a React frontend built with TypeScript, Vite, and shadcn/ui components, paired with an Express backend using Drizzle ORM for PostgreSQL database management. The system implements email-based authentication with verification codes, restricted to @nextest.com.br domain users, and provides a comprehensive dashboard for managing tutorial releases with client information tracking.
 
-## Recent Updates (v2.2 - August 2025)
+## Recent Updates (v2.3 - August 2025)
+- ✅ **Email Notifications**: Automated welcome emails when admin creates user accounts
+- ✅ **Temporary Password System**: Auto-generated secure passwords with email delivery
+- ✅ **Admin Panel Enhancement**: Complete user management with CRUD operations and role assignment
+- ✅ **Advanced Analytics Dashboard**: Multi-criteria filtering and productivity insights
+- ✅ **Professional Email Templates**: HTML email templates with Nextest branding and security instructions
+
+## Previous Updates (v2.2 - August 2025)
 - ✅ **Public API Integration**: Replaced Pipe CRM with free public APIs for CNPJ lookup
 - ✅ **Fallback System**: Implemented 4-tier API fallback (BrasilAPI → ReceitaWS → AwesomeAPI → CNPJá)
 - ✅ **CNPJ Validation**: Added official Brazilian CNPJ validation algorithm with digit verification
@@ -57,6 +64,9 @@ Preferred communication style: Simple, everyday language.
 - **HTTP Status API**: External systems can update tutorial release status via POST /api/tutorial-releases/:id/status endpoint
 - **Expiration Management**: Automatic 90-day expiration system with visual indicators and status updates
 - **Report Generation**: PDF and Excel export capabilities with comprehensive data including expiration dates
+- **Admin Panel**: Complete user management system with role assignment and account creation
+- **Email Notifications**: Automated welcome emails with temporary passwords for new user accounts
+- **Security Features**: Auto-generated secure passwords and password reset link integration
 - **Docker Support**: Full Docker and Docker Compose configuration for VPS deployment with Traefik reverse proxy
 - **Production Environment**: Configured for educanextest.com.br domain with SSL/TLS support
 

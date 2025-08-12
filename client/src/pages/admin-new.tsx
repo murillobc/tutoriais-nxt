@@ -52,9 +52,19 @@ const createUserSchema = z.object({
     message: 'Email deve ser do domínio @nextest.com.br'
   }),
   department: z.string().min(1, "Departamento é obrigatório"),
-  password: z.string().optional(),
+  password: z.string().transform(val => val === "" ? undefined : val).optional().refine(val => val === undefined || val.length >= 6, {
+    message: "Senha deve ter pelo menos 6 caracteres se informada"
+  }),
   confirmPassword: z.string().optional(),
   role: z.enum(["user", "admin"]).default("user"),
+}).refine(data => {
+  if (data.password && data.confirmPassword) {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"]
 });
 
 type CreateUserData = z.infer<typeof createUserSchema>;

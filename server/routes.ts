@@ -107,7 +107,9 @@ const adminCreateUserSchema = z.object({
     message: 'Email deve ser do domínio @nextest.com.br'
   }),
   department: z.string().min(1, "Departamento é obrigatório"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional(),
+  password: z.string().transform(val => val === "" ? undefined : val).optional().refine(val => val === undefined || val.length >= 6, {
+    message: "Senha deve ter pelo menos 6 caracteres"
+  }),
   confirmPassword: z.string().optional(),
   role: z.enum(["user", "admin"]).optional().default("user"),
 });
