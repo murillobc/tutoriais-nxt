@@ -93,7 +93,19 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
     
     return lines.slice(1).map((line, index) => {
       const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-      const client: any = { index, errors: [], isValid: true };
+      const client: any = { 
+        index, 
+        errors: [], 
+        isValid: true,
+        clientName: '',
+        clientCpf: '',
+        clientEmail: '',
+        clientPhone: '',
+        companyName: '',
+        companyDocument: '',
+        companyRole: '',
+        tutorialIds: []
+      };
       
       headers.forEach((header, headerIndex) => {
         const value = values[headerIndex] || '';
@@ -155,8 +167,6 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
         client.errors.push('Cargo é obrigatório');
         client.isValid = false;
       }
-
-      client.tutorialIds = [];
       
       return client;
     }).filter(client => client.clientName || client.clientEmail); // Filter out completely empty rows
@@ -422,7 +432,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
                           )}
                         </div>
                       </div>
-                      {!client.isValid && client.errors.length > 0 && (
+                      {!client.isValid && client.errors && client.errors.length > 0 && (
                         <div className="mt-1">
                           <p className="text-xs text-red-600">{client.errors.join(', ')}</p>
                         </div>
