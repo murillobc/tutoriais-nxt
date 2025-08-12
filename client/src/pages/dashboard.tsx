@@ -69,7 +69,23 @@ export default function Dashboard() {
       release.clientCpf.includes(searchTerm) ||
       release.companyName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || release.status === statusFilter;
+    let matchesStatus = false;
+    
+    if (statusFilter === "all") {
+      matchesStatus = true;
+    } else if (statusFilter === "success") {
+      // Para 'success', verificar se não está expirado
+      matchesStatus = release.status === 'success' && 
+                     release.expirationDate && 
+                     new Date(release.expirationDate) > new Date();
+    } else if (statusFilter === "expired") {
+      // Para 'expired', verificar se era 'success' mas já expirou
+      matchesStatus = release.status === 'success' && 
+                     release.expirationDate && 
+                     new Date(release.expirationDate) <= new Date();
+    } else {
+      matchesStatus = release.status === statusFilter;
+    }
 
     return matchesSearch && matchesStatus;
   });
@@ -83,7 +99,13 @@ export default function Dashboard() {
       const saoPauloNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
       return saoPauloReleaseDate.getMonth() === saoPauloNow.getMonth() && saoPauloReleaseDate.getFullYear() === saoPauloNow.getFullYear();
     }).length,
-    active: releases.filter(r => r.status === 'success').length, // Contar releases com status "success"
+    active: releases.filter(r => {
+      if (r.status !== 'success') return false;
+      if (!r.expirationDate) return false;
+      const now = new Date();
+      const expDate = new Date(r.expirationDate);
+      return expDate > now;
+    }).length,
     companies: Array.from(new Set(releases.map(r => r.companyName))).length
   };
 
@@ -139,14 +161,18 @@ export default function Dashboard() {
     return names.join(', ');
   };
 
-  const formatExpirationDate = (date: string | null | undefined) => {
-    if (!date) return <span className="text-gray-500">Não definida</span>;
+  const formatExpirationDate = (date: string | null | undefined, status: string) => {
+    // Só mostrar data de expiração se o status for 'success'
+    if (status !== 'success' || !date) {
+      return <span className="text-gray-500">-</span>;
+    }
+    
     const expDate = new Date(date);
     const now = new Date();
     const isExpired = expDate < now;
 
     return (
-      <span className={isExpired ? "text-red-600 font-medium" : "text-gray-600"}>
+      <span className={isExpired ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
         {expDate.toLocaleDateString('pt-BR', {
           timeZone: 'America/Sao_Paulo',
           day: '2-digit',
@@ -427,7 +453,7 @@ export default function Dashboard() {
                       </td>
                       <td className="py-4 px-4">
                         <div className="text-sm">
-                          {formatExpirationDate(release.expirationDate)}
+                          {formatExpirationDate(release.expirationDate, release.status)}
                         </div>
                       </td>
                       <td className="py-4 px-4">
