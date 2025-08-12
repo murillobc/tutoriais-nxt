@@ -236,9 +236,10 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="placeholder" disabled>Selecione um cargo</SelectItem>
-                      <SelectItem value="Desenvolvedor">Desenvolvedor</SelectItem>
+                      <SelectItem value="Tecnico">Técnico</SelectItem>
                       <SelectItem value="Gerente">Gerente</SelectItem>
-                      <SelectItem value="Analista">Analista</SelectItem>
+                      <SelectItem value="Supervisor">Supervisor</SelectItem>
+                      <SelectItem value="Proprietario">Proprietário</SelectItem>
                       <SelectItem value="Outro">Outro</SelectItem>
                     </SelectContent>
                   </Select>
