@@ -73,12 +73,12 @@ export default function Dashboard() {
     } else if (statusFilter === "success") {
       // Para 'success', verificar se não está expirado
       matchesStatus = release.status === 'Sucesso' &&
-                     release.expirationDate &&
+                     !!release.expirationDate &&
                      new Date(release.expirationDate) > new Date();
     } else if (statusFilter === "expired") {
       // Para 'expired', verificar se era 'Sucesso' mas já expirou
       matchesStatus = release.status === 'Sucesso' &&
-                     release.expirationDate &&
+                     !!release.expirationDate &&
                      new Date(release.expirationDate) <= new Date();
     } else {
       matchesStatus = release.status === statusFilter;
@@ -420,7 +420,7 @@ export default function Dashboard() {
                       <td className="py-4 px-4">
                         <div>
                           <p className="text-sm font-medium">{release.companyName}</p>
-                          <p className="text-xs text-gray-500">{release.companyDocument}</p>
+                          <p className="text-xs text-gray-500">{release.companyDocument || 'CNPJ não informado'}</p>
                         </div>
                       </td>
                       <td className="py-4 px-4">
