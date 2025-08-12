@@ -470,7 +470,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="font-semibold text-green-900">Sucessos</span>
                   </div>
-                  <p className="text-2xl font-bold text-green-800">{results.successful.length}</p>
+                  <p className="text-2xl font-bold text-green-800">{results.successful?.length || 0}</p>
                 </div>
 
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -478,7 +478,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
                     <AlertTriangle className="h-5 w-5 text-red-600" />
                     <span className="font-semibold text-red-900">Erros</span>
                   </div>
-                  <p className="text-2xl font-bold text-red-800">{results.failed.length}</p>
+                  <p className="text-2xl font-bold text-red-800">{results.failed?.length || 0}</p>
                 </div>
 
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
@@ -486,16 +486,16 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
                     <FileSpreadsheet className="h-5 w-5 text-blue-600" />
                     <span className="font-semibold text-blue-900">Total</span>
                   </div>
-                  <p className="text-2xl font-bold text-blue-800">{results.total}</p>
+                  <p className="text-2xl font-bold text-blue-800">{results.total || 0}</p>
                 </div>
               </div>
 
               {/* Errors Detail */}
-              {results.failed.length > 0 && (
+              {results.failed && results.failed.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-semibold text-red-900">Erros Detalhados:</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
-                    {results.failed.map((error, index) => (
+                    {(results.failed || []).map((error, index) => (
                       <div key={index} className="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm font-medium text-red-900">Cliente {error.index + 1}:</p>
                         <p className="text-sm text-red-700">{error.error}</p>
