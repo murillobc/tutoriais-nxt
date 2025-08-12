@@ -7,16 +7,23 @@ interface CompanyData {
   document: string;
   email?: string;
   phone?: string;
+  situacao?: string;
+  atividade_principal?: string;
+  endereco_completo?: string;
+  data_abertura?: string;
+  porte?: string;
 }
 
 interface CompanySearchResult {
   found: boolean;
   company?: CompanyData;
+  source?: string;
   message?: string;
   error?: string;
+  attempts?: any[];
 }
 
-export function usePipeCompany() {
+export function usePublicCnpjAPI() {
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
@@ -45,13 +52,13 @@ export function usePipeCompany() {
       if (result.found && result.company) {
         toast({
           title: "Empresa encontrada!",
-          description: `${result.company.name} foi encontrada no CRM`,
+          description: `${result.company.name} encontrada via ${result.source || 'API pública'}`,
         });
         return result.company;
       } else {
         toast({
           title: "Empresa não encontrada",
-          description: "CNPJ não encontrado no Pipe CRM",
+          description: result.message || "CNPJ não encontrado nas bases públicas",
           variant: "destructive",
         });
         return null;
@@ -60,7 +67,7 @@ export function usePipeCompany() {
       console.error('Erro ao buscar empresa:', error);
       toast({
         title: "Erro na busca",
-        description: error.message || "Erro ao consultar o CRM",
+        description: error.message || "Erro ao consultar APIs públicas",
         variant: "destructive",
       });
       return null;

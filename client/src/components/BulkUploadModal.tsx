@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { usePipeCompany } from "@/hooks/usePipeCompany";
+import { usePublicCnpjAPI } from "@/hooks/usePipeCompany";
 import { isValidCpf, isValidCnpj, formatCpf, formatCnpj } from "@/lib/formatters";
 
 interface BulkUploadModalProps {
@@ -60,7 +60,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
   const [currentStep, setCurrentStep] = useState<'upload' | 'review' | 'results'>('upload');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { searchCompany, isSearching } = usePipeCompany();
+  const { searchCompany, isSearching } = usePublicCnpjAPI();
 
   const { data: tutorials = [] } = useQuery<Tutorial[]>({
     queryKey: ["/api/tutorials"],

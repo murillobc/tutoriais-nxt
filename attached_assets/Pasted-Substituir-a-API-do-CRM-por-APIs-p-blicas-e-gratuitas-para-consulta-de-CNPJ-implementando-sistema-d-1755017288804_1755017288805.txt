@@ -1,0 +1,143 @@
+Substituir a API do CRM por APIs públicas e gratuitas para consulta de CNPJ, implementando sistema de fallback para garantir alta disponibilidade.
+🌐 APIs Recomendadas (em ordem de prioridade)
+1. BrasilAPI (Principal - CORS habilitado)
+URL: https://brasilapi.com.br/api/cnpj/v1/{cnpj}
+Método: GET
+CORS: ✅ Habilitado
+Rate Limit: Razoável para uso normal
+Dados: Completos da Receita Federal
+2. ReceitaWS (Backup - requer proxy CORS)
+URL: https://www.receitaws.com.br/v1/cnpj/{cnpj}
+URL com Proxy: https://api.allorigins.win/get?url=https://www.receitaws.com.br/v1/cnpj/{cnpj}
+Método: GET
+CORS: ❌ Bloqueado (usar proxy)
+Dados: Completos, bem estruturados
+3. AwesomeAPI (Alternativa)
+URL: https://cep.awesomeapi.com.br/json/{cnpj}
+Método: GET
+CORS: ✅ Habilitado
+Dados: Básicos mas funcionais
+4. CNPJá Open (Backup final)
+URL: https://open.cnpja.com/office/{cnpj}
+URL com Proxy: https://api.allorigins.win/get?url=https://open.cnpja.com/office/{cnpj}
+Método: GET
+CORS: ❌ Bloqueado (usar proxy)
+Dados: Muito completos
+🔧 Implementação Técnica
+Estrutura de Dados Padronizada
+javascript{
+  nome: string,           // Razão social da empresa
+  cnpj: string,          // CNPJ formatado
+  situacao: string,      // Situação cadastral
+  atividade_principal: string,
+  endereco_completo: string,
+  telefone: string,
+  email: string,
+  data_abertura: string,
+  natureza_juridica: string,
+  porte: string,
+  capital_social: number
+}
+Sistema de Fallback
+
+Tentar BrasilAPI primeiro (mais rápida)
+Se falhar, tentar ReceitaWS via proxy
+Se falhar, tentar AwesomeAPI
+Se falhar, tentar CNPJá via proxy
+Se todas falharem, retornar erro
+
+Tratamento de CORS
+
+Para APIs sem CORS: usar https://api.allorigins.win/get?url={url_encoded}
+Para APIs com CORS: requisição direta
+Timeout de 10 segundos por tentativa
+
+📝 Código de Exemplo
+Função Principal
+javascriptasync function consultarCNPJ(cnpj) {
+  const cnpjLimpo = cnpj.replace(/\D/g, '');
+  
+  const apis = [
+    {
+      name: 'BrasilAPI',
+      url: `https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`,
+      direct: true,
+      parser: (data) => ({
+        nome: data.razao_social || data.nome_fantasia,
+        cnpj: data.cnpj,
+        situacao: data.descricao_situacao_cadastral,
+        // ... outros campos
+      })
+    },
+    {
+      name: 'ReceitaWS',
+      url: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.receitaws.com.br/v1/cnpj/${cnpjLimpo}`)}`,
+      direct: false,
+      parser: (response) => {
+        const data = JSON.parse(response.contents);
+        return {
+          nome: data.nome,
+          cnpj: data.cnpj,
+          situacao: data.situacao,
+          // ... outros campos
+        };
+      }
+    }
+    // ... outras APIs
+  ];
+  
+  for (const api of apis) {
+    try {
+      const response = await fetch(api.url, { timeout: 10000 });
+      const data = await response.json();
+      return api.parser(data);
+    } catch (error) {
+      console.log(`${api.name} falhou:`, error.message);
+      continue;
+    }
+  }
+  
+  throw new Error('Nenhuma API retornou dados válidos');
+}
+⚠️ Considerações Importantes
+Rate Limits
+
+BrasilAPI: ~100 req/min (uso normal)
+ReceitaWS: ~60 req/min
+Proxies: Podem ter limites próprios
+
+Confiabilidade
+
+BrasilAPI: 95% uptime
+ReceitaWS: 90% uptime
+Proxies: 85% uptime (dependem de terceiros)
+
+Validação de CNPJ
+javascriptfunction validarCNPJ(cnpj) {
+  cnpj = cnpj.replace(/\D/g, '');
+  if (cnpj.length !== 14) return false;
+  
+  // Algoritmo de validação dos dígitos verificadores
+  // ... implementar validação completa
+}
+🚀 Benefícios da Implementação
+✅ Custo Zero: Todas as APIs são gratuitas
+✅ Alta Disponibilidade: Sistema de fallback automático
+✅ Dados Oficiais: Informações da Receita Federal
+✅ Sem Dependências: Não depende do CRM interno
+✅ Escalável: Suporta volume razoável de consultas
+🔍 Monitoramento Recomendado
+
+Log de qual API foi utilizada em cada consulta
+Métricas de sucesso/falha por API
+Tempo de resposta de cada API
+Alertas quando todas as APIs falharem
+
+📚 Recursos Adicionais
+
+Documentação BrasilAPI: https://brasilapi.com.br/docs
+Validador CNPJ online para testes
+Console do navegador para debug (F12)
+
+
+Resumo: Use BrasilAPI como principal, ReceitaWS via proxy como backup, e implemente validação + sistema de fallback para garantir 99% de disponibilidade nas consultas de CNPJ.

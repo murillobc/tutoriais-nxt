@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { InputMask } from "@/components/ui/input-mask";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { usePipeCompany } from "@/hooks/usePipeCompany";
+import { usePublicCnpjAPI } from "@/hooks/usePipeCompany";
 import { isValidCpf, isValidCnpj } from "@/lib/formatters";
 
 const tutorialReleaseSchema = z.object({
@@ -50,7 +50,7 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { searchCompany, isSearching } = usePipeCompany();
+  const { searchCompany, isSearching } = usePublicCnpjAPI();
 
   const handleCnpjSearch = async () => {
     const cnpj = form.getValues("companyDocument");

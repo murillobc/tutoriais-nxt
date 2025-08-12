@@ -552,7 +552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Pipe CRM integration - Company search by CNPJ
+  // Public APIs integration - Company search by CNPJ with fallback system
   app.get("/api/companies/search", requireAuth, async (req, res) => {
     try {
       const { cnpj } = req.query;
@@ -561,56 +561,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "CNPJ é obrigatório" });
       }
 
-      const PIPE_API_KEY = process.env.PIPE_API_KEY;
-      if (!PIPE_API_KEY) {
-        return res.status(500).json({ error: "API key do Pipe não configurada" });
-      }
-
       // Remove formatação do CNPJ (deixa só números)
       const cleanCnpj = cnpj.replace(/\D/g, '');
-      console.log(`🔍 Buscando empresa com CNPJ: ${cleanCnpj}`);
-
-      const url = `https://api.pipe.run/v1/companies?cnpj=${cleanCnpj}`;
-      console.log(`📡 URL da requisição: ${url}`);
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${PIPE_API_KEY}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Pipe API error:', response.status, errorText);
-        return res.status(response.status).json({ 
-          error: "Erro ao consultar API do Pipe",
-          details: errorText,
-          status: response.status
-        });
+      
+      // Validar CNPJ
+      if (!isValidCNPJ(cleanCnpj)) {
+        return res.status(400).json({ error: "CNPJ inválido" });
       }
 
-      const data = await response.json();
+      console.log(`🔍 Buscando empresa com CNPJ: ${cleanCnpj}`);
+
+      const result = await consultarCNPJComFallback(cleanCnpj);
       
-      if (data.data && data.data.length > 0) {
-        const company = data.data[0];
+      if (result.found && result.company) {
         res.json({
           found: true,
           company: {
-            name: company.name,
-            document: company.doc,
-            email: company.email,
-            phone: company.phone
-          }
+            name: result.company.nome,
+            document: result.company.cnpj,
+            email: result.company.email || '',
+            phone: result.company.telefone || '',
+            situacao: result.company.situacao,
+            atividade_principal: result.company.atividade_principal,
+            endereco_completo: result.company.endereco_completo,
+            data_abertura: result.company.data_abertura,
+            porte: result.company.porte
+          },
+          source: result.source
         });
       } else {
-        res.json({ found: false, message: "Empresa não encontrada" });
+        res.json({ 
+          found: false, 
+          message: "Empresa não encontrada nas bases de dados públicas",
+          attempts: result.attempts 
+        });
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro na busca de empresa:", error);
-      res.status(500).json({ error: "Erro interno do servidor" });
+      res.status(500).json({ 
+        error: "Erro interno do servidor",
+        message: error?.message || "Erro desconhecido"
+      });
     }
   });
 
@@ -635,6 +627,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Validação de CNPJ com algoritmo oficial
+function isValidCNPJ(cnpj: string): boolean {
+  cnpj = cnpj.replace(/\D/g, '');
+  
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(cnpj)) return false; // Todos os dígitos iguais
+  
+  // Validação dos dígitos verificadores
+  let tamanho = cnpj.length - 2;
+  let numeros = cnpj.substring(0, tamanho);
+  let digitos = cnpj.substring(tamanho);
+  let soma = 0;
+  let pos = tamanho - 7;
+  
+  for (let i = tamanho; i >= 1; i--) {
+    soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  
+  let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+  if (resultado != parseInt(digitos.charAt(0))) return false;
+  
+  tamanho = tamanho + 1;
+  numeros = cnpj.substring(0, tamanho);
+  soma = 0;
+  pos = tamanho - 7;
+  
+  for (let i = tamanho; i >= 1; i--) {
+    soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  
+  resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+  if (resultado != parseInt(digitos.charAt(1))) return false;
+  
+  return true;
+}
+
+// Sistema de consulta CNPJ com fallback automático
+async function consultarCNPJComFallback(cnpj: string): Promise<any> {
+  const apis = [
+    {
+      name: 'BrasilAPI',
+      url: `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
+      direct: true,
+      parser: (data: any) => ({
+        nome: data.razao_social || data.nome_fantasia || data.legal_nature,
+        cnpj: data.cnpj,
+        situacao: data.registration_status || data.descricao_situacao_cadastral,
+        atividade_principal: data.main_activity?.text || data.cnae_fiscal_descricao,
+        endereco_completo: `${data.street || data.logradouro || ''} ${data.number || data.numero || ''}, ${data.district || data.bairro || ''}, ${data.city || data.municipio || ''} - ${data.state || data.uf || ''}`,
+        telefone: data.phone || data.telefone || data.ddd_telefone_1 || '',
+        email: data.email || '',
+        data_abertura: data.opening_date || data.data_inicio_atividade,
+        natureza_juridica: data.legal_nature || data.natureza_juridica,
+        porte: data.company_size || data.porte,
+        capital_social: data.capital_social || 0
+      })
+    },
+    {
+      name: 'ReceitaWS',
+      url: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.receitaws.com.br/v1/cnpj/${cnpj}`)}`,
+      direct: false,
+      parser: (response: any) => {
+        const data = JSON.parse(response.contents);
+        return {
+          nome: data.nome || data.fantasia,
+          cnpj: data.cnpj,
+          situacao: data.situacao,
+          atividade_principal: data.atividade_principal?.[0]?.text || '',
+          endereco_completo: `${data.logradouro || ''} ${data.numero || ''}, ${data.bairro || ''}, ${data.municipio || ''} - ${data.uf || ''}`,
+          telefone: data.telefone || '',
+          email: data.email || '',
+          data_abertura: data.abertura,
+          natureza_juridica: data.natureza_juridica,
+          porte: data.porte,
+          capital_social: parseFloat(data.capital_social?.replace(/[^\d,]/g, '')?.replace(',', '.') || '0')
+        };
+      }
+    },
+    {
+      name: 'AwesomeAPI',
+      url: `https://cep.awesomeapi.com.br/json/${cnpj}`,
+      direct: true,
+      parser: (data: any) => ({
+        nome: data.company?.name || data.name,
+        cnpj: data.cnpj || cnpj,
+        situacao: data.status || 'Ativa',
+        atividade_principal: data.activity || '',
+        endereco_completo: `${data.address?.street || ''} ${data.address?.number || ''}, ${data.address?.district || ''}, ${data.address?.city || ''} - ${data.address?.state || ''}`,
+        telefone: data.phone || '',
+        email: data.email || '',
+        data_abertura: data.founded || '',
+        natureza_juridica: data.type || '',
+        porte: data.size || '',
+        capital_social: 0
+      })
+    },
+    {
+      name: 'CNPJá',
+      url: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://open.cnpja.com/office/${cnpj}`)}`,
+      direct: false,
+      parser: (response: any) => {
+        const data = JSON.parse(response.contents);
+        return {
+          nome: data.company?.name || data.name,
+          cnpj: data.taxId || cnpj,
+          situacao: data.registration?.status || 'Ativa',
+          atividade_principal: data.mainActivity?.text || '',
+          endereco_completo: `${data.address?.street || ''} ${data.address?.number || ''}, ${data.address?.district || ''}, ${data.address?.city || ''} - ${data.address?.state || ''}`,
+          telefone: data.phones?.[0]?.number || '',
+          email: data.emails?.[0]?.address || '',
+          data_abertura: data.registration?.published || '',
+          natureza_juridica: data.company?.nature?.text || '',
+          porte: data.company?.size?.text || '',
+          capital_social: data.company?.equity || 0
+        };
+      }
+    }
+  ];
+  
+  const attempts = [];
+  
+  for (const api of apis) {
+    try {
+      console.log(`📡 Tentando ${api.name}...`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
+      const response = await fetch(api.url, { 
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; CNPJ-Lookup/1.0)',
+          'Accept': 'application/json'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const parsedData = api.parser(data);
+      
+      // Verificar se temos dados válidos
+      if (parsedData.nome && parsedData.nome.trim()) {
+        console.log(`✅ ${api.name} retornou dados válidos`);
+        attempts.push({ api: api.name, status: 'success' });
+        return {
+          found: true,
+          company: parsedData,
+          source: api.name,
+          attempts
+        };
+      } else {
+        throw new Error('Dados inválidos ou empresa não encontrada');
+      }
+      
+    } catch (error: any) {
+      console.log(`❌ ${api.name} falhou:`, error?.message || "Erro desconhecido");
+      attempts.push({ 
+        api: api.name, 
+        status: 'failed', 
+        error: error?.message || "Erro desconhecido"
+      });
+      continue;
+    }
+  }
+  
+  return {
+    found: false,
+    message: 'Nenhuma API retornou dados válidos',
+    attempts
+  };
 }
 
 // Webhook function to send tutorial release data
