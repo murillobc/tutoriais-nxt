@@ -106,10 +106,21 @@ export default function AdminPage() {
   // Mutations
   const createUserMutation = useMutation({
     mutationFn: async (userData: CreateUserData) => {
-      return await apiRequest("/api/admin/users", {
+      const response = await fetch("/api/admin/users", {
         method: "POST",
-        body: userData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(userData),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao criar usuário");
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -131,10 +142,21 @@ export default function AdminPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<User> }) => {
-      return await apiRequest(`/api/admin/users/${id}`, {
+      const response = await fetch(`/api/admin/users/${id}`, {
         method: "PATCH",
-        body: updates,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(updates),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao atualizar usuário");
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -154,9 +176,20 @@ export default function AdminPage() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/admin/users/${id}`, {
+      const response = await fetch(`/api/admin/users/${id}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao deletar usuário");
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       toast({
