@@ -24,17 +24,17 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(id: string, password: string): Promise<void>;
-  
+
   // Verification codes
   createVerificationCode(code: InsertVerificationCode): Promise<VerificationCode>;
   getValidVerificationCode(email: string, code: string): Promise<VerificationCode | undefined>;
   markVerificationCodeAsUsed(id: string): Promise<void>;
-  
+
   // Tutorials
   getAllTutorials(): Promise<Tutorial[]>;
   getTutorialsByIds(ids: string[]): Promise<Tutorial[]>;
   createTutorial(tutorial: InsertTutorial): Promise<Tutorial>;
-  
+
   // Tutorial releases
   createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease>;
   getTutorialReleasesByUser(userId: string): Promise<TutorialRelease[]>;
@@ -44,7 +44,7 @@ export interface IStorage {
   getTutorialReleaseStats(): Promise<any>;
   checkAndUpdateExpiredReleases(): Promise<void>;
   getTutorialReleasesForReport(filters?: any): Promise<(TutorialRelease & { user: User })[]>;
-  
+
   // Job Roles
   getAllJobRoles(): Promise<JobRole[]>;
   getJobRolesByType(type: 'department' | 'client_role'): Promise<JobRole[]>;
@@ -126,22 +126,14 @@ export class DatabaseStorage implements IStorage {
     return newTutorial;
   }
 
-  async createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease> {
-    // Definir data de expiração automaticamente para 90 dias a partir da criação (timezone São Paulo)
-    const now = new Date();
-    const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
-    const expirationDate = new Date(saoPauloTime);
-    expirationDate.setDate(expirationDate.getDate() + 90);
-    
-    const [tutorialRelease] = await db
+  async createTutorialRelease(data: InsertTutorialRelease): Promise<TutorialRelease> {
+    // Não definir data de expiração na criação - apenas quando status for 'success'
+    const [release] = await db
       .insert(tutorialReleases)
-      .values({
-        ...release,
-        status: release.status || 'pending',
-        expirationDate: expirationDate
-      })
+      .values(data)
       .returning();
-    return tutorialRelease;
+
+    return release;
   }
 
   async getTutorialReleasesByUser(userId: string): Promise<TutorialRelease[]> {
@@ -159,7 +151,7 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.log('Aviso: Verificação de expiração falhou (coluna pode não existir ainda):', error);
     }
-    
+
     const results = await db
       .select({
         id: tutorialReleases.id,
@@ -180,40 +172,88 @@ export class DatabaseStorage implements IStorage {
       .from(tutorialReleases)
       .leftJoin(users, eq(tutorialReleases.userId, users.id))
       .orderBy(desc(tutorialReleases.createdAt));
-    
+
     return results.filter(result => result.user !== null) as (TutorialRelease & { user: User })[];
   }
 
   async updateTutorialReleaseStatus(id: string, status: string): Promise<void> {
-    // Apenas atualizar o status, data de expiração já foi definida na criação
+    // Se o status for 'success', definir a data de expiração para 90 dias a partir de agora
+    let updateData: Partial<InsertTutorialRelease> = { status };
+    if (status === 'success') {
+      const now = new Date();
+      const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+      const expirationDate = new Date(saoPauloTime);
+      expirationDate.setDate(expirationDate.getDate() + 90);
+      updateData.expirationDate = expirationDate;
+    } else {
+      // Se o status não for 'success', remover a data de expiração se existir
+      updateData.expirationDate = null;
+    }
+
     await db
       .update(tutorialReleases)
-      .set({ status })
+      .set(updateData)
       .where(eq(tutorialReleases.id, id));
   }
 
   async getTutorialReleasesByStatus(status: string): Promise<TutorialRelease[]> {
-    return await db
+    let query = db
       .select()
       .from(tutorialReleases)
       .where(eq(tutorialReleases.status, status))
       .orderBy(desc(tutorialReleases.createdAt));
+
+    // Se o status for 'success', filtrar também pelas datas de expiração válidas
+    if (status === 'success') {
+      const now = new Date();
+      const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+      query = query.where(
+        and(
+          eq(tutorialReleases.status, status),
+          sql`${tutorialReleases.expirationDate} IS NOT NULL`,
+          sql`${tutorialReleases.expirationDate} > ${saoPauloTime}`
+        )
+      );
+    } else if (status === 'expired') {
+      // Para status 'expired', verificar as datas de expiração que já passaram
+      const now = new Date();
+      const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+      query = query.where(
+        and(
+          eq(tutorialReleases.status, 'success'), // Originalmente eram 'success' e agora estão expirados
+          sql`${tutorialReleases.expirationDate} IS NOT NULL`,
+          sql`${tutorialReleases.expirationDate} <= ${saoPauloTime}`
+        )
+      );
+    }
+
+    return await query;
   }
 
   async getTutorialReleaseStats(): Promise<any> {
+    const now = new Date();
+    const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+
     const results = await db
       .select({
         status: tutorialReleases.status,
-        count: tutorialReleases.id
+        count: tutorialReleases.id,
+        expirationDate: tutorialReleases.expirationDate
       })
       .from(tutorialReleases);
-    
+
+    const total = results.length;
+    const success = results.filter(r => r.status === 'success' && r.expirationDate && new Date(r.expirationDate) > saoPauloTime).length;
+    const failed = results.filter(r => r.status === 'failed').length;
+    const expired = results.filter(r => r.status === 'success' && r.expirationDate && new Date(r.expirationDate) <= saoPauloTime).length;
+    const pending = results.filter(r => r.status === 'pending').length;
+
     const stats = {
-      total: results.length,
-      pending: results.filter(r => r.status === 'pending').length,
-      success: results.filter(r => r.status === 'success').length,
-      failed: results.filter(r => r.status === 'failed').length,
-      expired: results.filter(r => r.status === 'expired').length
+      total: total,
+      pending: pending,
+      success: success,
+      failed: failed,
+      expired: expired
     };
 
     return {
@@ -225,7 +265,7 @@ export class DatabaseStorage implements IStorage {
   async checkAndUpdateExpiredReleases(): Promise<void> {
     const now = new Date();
     const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
-    
+
     // Buscar releases com status 'success' e data de expiração vencida
     const expiredReleases = await db
       .select()
@@ -243,9 +283,9 @@ export class DatabaseStorage implements IStorage {
       const expiredIds = expiredReleases.map(r => r.id);
       await db
         .update(tutorialReleases)
-        .set({ status: 'expired' })
+        .set({ status: 'expired', expirationDate: null }) // Remover data de expiração ao expirar
         .where(inArray(tutorialReleases.id, expiredIds));
-      
+
       console.log(`✅ ${expiredReleases.length} tutoriais marcados como expirados`);
     }
   }
@@ -256,9 +296,30 @@ export class DatabaseStorage implements IStorage {
     if (filters?.userId) {
       whereConditions.push(eq(tutorialReleases.userId, filters.userId));
     }
-    
+
     if (filters?.status && filters.status !== 'all') {
-      whereConditions.push(eq(tutorialReleases.status, filters.status));
+      if (filters.status === 'success') {
+        const now = new Date();
+        const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+        // Para 'success', considerar apenas os que ainda não expiraram
+        whereConditions.push(and(
+          eq(tutorialReleases.status, filters.status),
+          sql`${tutorialReleases.expirationDate} IS NOT NULL`,
+          sql`${tutorialReleases.expirationDate} > ${saoPauloTime}`
+        ));
+      } else if (filters.status === 'expired') {
+        // Para 'expired', considerar os que eram 'success' e já passaram da data de expiração
+        const now = new Date();
+        const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+        whereConditions.push(and(
+          eq(tutorialReleases.status, 'success'), // Status original era 'success'
+          sql`${tutorialReleases.expirationDate} IS NOT NULL`,
+          sql`${tutorialReleases.expirationDate} <= ${saoPauloTime}`
+        ));
+      }
+      else {
+        whereConditions.push(eq(tutorialReleases.status, filters.status));
+      }
     }
 
     const results = await db
@@ -282,7 +343,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(tutorialReleases.userId, users.id))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .orderBy(desc(tutorialReleases.createdAt));
-    
+
     return results.filter(result => result.user !== null) as (TutorialRelease & { user: User })[];
   }
 

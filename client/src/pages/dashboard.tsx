@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Plus, 
-  Download, 
-  Search, 
-  Eye, 
-  Edit, 
-  Trash, 
+import {
+  Plus,
+  Download,
+  Search,
+  Eye,
+  Edit,
+  Trash,
   LogOut,
   ClipboardList,
   Calendar,
@@ -61,10 +61,10 @@ export default function Dashboard() {
     queryKey: ["/api/tutorials"],
   });
 
-  
+
 
   const filteredReleases = releases.filter(release => {
-    const matchesSearch = 
+    const matchesSearch =
       release.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       release.clientCpf.includes(searchTerm) ||
       release.companyName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -98,7 +98,7 @@ export default function Dashboard() {
 
     const statusLabels = {
       active: "Ativo",
-      pending: "Pendente", 
+      pending: "Pendente",
       expired: "Expirado",
       success: "Sucesso",
       failed: "Falha"
@@ -113,20 +113,20 @@ export default function Dashboard() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', { 
+    return date.toLocaleDateString('pt-BR', {
       timeZone: 'America/Sao_Paulo',
       day: '2-digit',
-      month: '2-digit', 
+      month: '2-digit',
       year: 'numeric'
     });
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('pt-BR', { 
+    return date.toLocaleTimeString('pt-BR', {
       timeZone: 'America/Sao_Paulo',
-      hour: '2-digit', 
-      minute: '2-digit' 
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -144,13 +144,13 @@ export default function Dashboard() {
     const expDate = new Date(date);
     const now = new Date();
     const isExpired = expDate < now;
-    
+
     return (
       <span className={isExpired ? "text-red-600 font-medium" : "text-gray-600"}>
-        {expDate.toLocaleDateString('pt-BR', { 
+        {expDate.toLocaleDateString('pt-BR', {
           timeZone: 'America/Sao_Paulo',
           day: '2-digit',
-          month: '2-digit', 
+          month: '2-digit',
           year: 'numeric'
         })}
         {isExpired && " (Expirado)"}
@@ -158,7 +158,7 @@ export default function Dashboard() {
     );
   };
 
-  
+
 
   const generateExcelReport = async () => {
     try {
@@ -170,26 +170,26 @@ export default function Dashboard() {
         });
         return;
       }
-      
+
       const response = await fetch(`/api/reports/tutorial-releases?userId=${user.id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" }
       });
-      
+
       if (!response.ok) throw new Error("Erro ao buscar dados do relatório");
-      
+
       const data = await response.json();
-      
+
       const filteredData = data;
-      
+
       // Importar dinamicamente XLSX
       const XLSX = await import('xlsx');
-      
+
       // Preparar dados para Excel
       const worksheetData = [
         ['Cliente', 'CPF', 'Email', 'Empresa', 'CNPJ', 'Cargo', 'Status', 'Data Criação', 'Data Expiração', 'Responsável']
       ];
-      
+
       filteredData.forEach((release: any) => {
         worksheetData.push([
           release.clientName,
@@ -198,7 +198,7 @@ export default function Dashboard() {
           release.companyName,
           release.companyDocument,
           release.companyRole,
-          release.status === 'success' ? 'Sucesso' : 
+          release.status === 'success' ? 'Sucesso' :
           release.status === 'pending' ? 'Pendente' :
           release.status === 'failed' ? 'Falha' : 'Expirado',
           formatDate(release.createdAt),
@@ -206,14 +206,14 @@ export default function Dashboard() {
           release.user?.name || 'N/A'
         ]);
       });
-      
+
       // Criar workbook e worksheet
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-      
+
       // Adicionar worksheet ao workbook
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório Tutoriais');
-      
+
       // Salvar arquivo
       XLSX.writeFile(workbook, 'relatorio-tutoriais.xlsx');
     } catch (error) {
@@ -229,9 +229,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-4">
-              <img 
-                src="https://educanextest.com.br/wp-content/uploads/2024/04/Group-13Logo-Horizontal-Educa-SVG-Fix.svg" 
-                alt="Logo" 
+              <img
+                src="https://educanextest.com.br/wp-content/uploads/2024/04/Group-13Logo-Horizontal-Educa-SVG-Fix.svg"
+                alt="Logo"
                 className="h-8"
               />
               <h1 className="text-xl font-semibold text-nextest-dark">Portal de Tutoriais</h1>
@@ -369,9 +369,9 @@ export default function Dashboard() {
 
               {/* Report Buttons */}
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={generateExcelReport}
                   className="bg-white/50"
                   data-testid="button-export-excel"
@@ -475,9 +475,9 @@ export default function Dashboard() {
       </div>
 
       {/* Tutorial Release Modal */}
-      <TutorialReleaseModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <TutorialReleaseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
     </div>
   );
