@@ -55,7 +55,6 @@ export default function Dashboard() {
 
   const { data: releases = [], isLoading, refetch: refetchReleases } = useQuery<TutorialRelease[]>({
     queryKey: ["/api/tutorial-releases"],
-    select: (data) => data.filter(release => release.user?.id === user?.id), // Filtrar apenas releases do usuário atual
   });
 
   const { data: tutorials = [] } = useQuery({
@@ -156,8 +155,7 @@ export default function Dashboard() {
       
       const data = await response.json();
       
-      // Filtrar apenas as liberações do usuário atual
-      const filteredData = data.filter((release: any) => release.user?.id === user?.id);
+      const filteredData = data;
       
       // Importar dinamicamente XLSX
       const XLSX = await import('xlsx');

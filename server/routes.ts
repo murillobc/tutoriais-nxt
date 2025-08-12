@@ -331,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tutorial-releases", requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any).userId;
-      const releases = await storage.getTutorialReleasesByUserId(userId); // Changed to filter by userId
+      const releases = await storage.getTutorialReleasesByUser(userId);
       res.json(releases);
     } catch (error) {
       console.error('Get releases error:', error);
