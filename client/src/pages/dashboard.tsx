@@ -79,7 +79,9 @@ export default function Dashboard() {
     thisMonth: releases.filter(r => {
       const releaseDate = new Date(r.createdAt);
       const now = new Date();
-      return releaseDate.getMonth() === now.getMonth() && releaseDate.getFullYear() === now.getFullYear();
+      const saoPauloReleaseDate = new Date(releaseDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+      const saoPauloNow = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+      return saoPauloReleaseDate.getMonth() === saoPauloNow.getMonth() && saoPauloReleaseDate.getFullYear() === saoPauloNow.getFullYear();
     }).length,
     active: releases.filter(r => r.status === 'success').length, // Contar releases com status "success"
     companies: Array.from(new Set(releases.map(r => r.companyName))).length
@@ -111,12 +113,21 @@ export default function Dashboard() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
+    return date.toLocaleDateString('pt-BR', { 
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('pt-BR', { 
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
   const getTutorialNames = (tutorialIds: string[]) => {
@@ -136,7 +147,12 @@ export default function Dashboard() {
     
     return (
       <span className={isExpired ? "text-red-600 font-medium" : "text-gray-600"}>
-        {expDate.toLocaleDateString('pt-BR')}
+        {expDate.toLocaleDateString('pt-BR', { 
+          timeZone: 'America/Sao_Paulo',
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric'
+        })}
         {isExpired && " (Expirado)"}
       </span>
     );

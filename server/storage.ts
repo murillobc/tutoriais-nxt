@@ -127,22 +127,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTutorialRelease(release: InsertTutorialRelease): Promise<TutorialRelease> {
-    // Definir data de expiração automaticamente para 90 dias a partir de hoje
-    const expirationDate = new Date();
+    // Definir data de expiração automaticamente para 90 dias a partir da criação (timezone São Paulo)
+    const now = new Date();
+    const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+    const expirationDate = new Date(saoPauloTime);
     expirationDate.setDate(expirationDate.getDate() + 90);
     
     const [tutorialRelease] = await db
       .insert(tutorialReleases)
       .values({
-        userId: release.userId,
-        clientName: release.clientName,
-        clientCpf: release.clientCpf,
-        clientEmail: release.clientEmail,
-        clientPhone: release.clientPhone,
-        companyName: release.companyName,
-        companyDocument: release.companyDocument,
-        companyRole: release.companyRole,
-        tutorialIds: release.tutorialIds,
+        ...release,
         status: release.status || 'pending',
         expirationDate: expirationDate
       })
@@ -230,6 +224,7 @@ export class DatabaseStorage implements IStorage {
 
   async checkAndUpdateExpiredReleases(): Promise<void> {
     const now = new Date();
+    const saoPauloTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
     
     // Buscar releases com status 'success' e data de expiração vencida
     const expiredReleases = await db
@@ -239,7 +234,7 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(tutorialReleases.status, 'success'),
           sql`${tutorialReleases.expirationDate} IS NOT NULL`,
-          sql`${tutorialReleases.expirationDate} <= ${now}`
+          sql`${tutorialReleases.expirationDate} <= ${saoPauloTime}`
         )
       );
 
@@ -256,7 +251,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTutorialReleasesForReport(filters?: any): Promise<(TutorialRelease & { user: User })[]> {
-    const baseQuery = db
+    let whereConditions = [];
+
+    if (filters?.userId) {
+      whereConditions.push(eq(tutorialReleases.userId, filters.userId));
+    }
+    
+    if (filters?.status && filters.status !== 'all') {
+      whereConditions.push(eq(tutorialReleases.status, filters.status));
+    }
+
+    const results = await db
       .select({
         id: tutorialReleases.id,
         userId: tutorialReleases.userId,
@@ -274,20 +279,9 @@ export class DatabaseStorage implements IStorage {
         user: users
       })
       .from(tutorialReleases)
-      .leftJoin(users, eq(tutorialReleases.userId, users.id));
-
-    // Aplicar filtros se fornecidos
-    let queryWithFilters = baseQuery;
-    
-    if (filters?.userId) {
-      queryWithFilters = queryWithFilters.where(eq(tutorialReleases.userId, filters.userId));
-    }
-    
-    if (filters?.status && filters.status !== 'all') {
-      queryWithFilters = queryWithFilters.where(eq(tutorialReleases.status, filters.status));
-    }
-    
-    const results = await queryWithFilters.orderBy(desc(tutorialReleases.createdAt));
+      .leftJoin(users, eq(tutorialReleases.userId, users.id))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .orderBy(desc(tutorialReleases.createdAt));
     
     return results.filter(result => result.user !== null) as (TutorialRelease & { user: User })[];
   }
