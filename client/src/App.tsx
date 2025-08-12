@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
-import AdminPage from "@/pages/admin";
+import AdminPage from "@/pages/admin-new";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {

@@ -458,6 +458,40 @@ export class DatabaseStorage implements IStorage {
       releasesThisMonth: thisMonthReleasesResult[0]?.count || 0,
     };
   }
+
+  // Buscar todas as liberações para admin
+  async getAllTutorialReleases(): Promise<TutorialRelease[]> {
+    const releases = await db
+      .select({
+        id: tutorialReleases.id,
+        clientName: tutorialReleases.clientName,
+        clientCpf: tutorialReleases.clientCpf,
+        clientEmail: tutorialReleases.clientEmail,
+        clientPhone: tutorialReleases.clientPhone,
+        companyName: tutorialReleases.companyName,
+        companyDocument: tutorialReleases.companyDocument,
+        companyRole: tutorialReleases.companyRole,
+        tutorialIds: tutorialReleases.tutorialIds,
+        status: tutorialReleases.status,
+        expirationDate: tutorialReleases.expirationDate,
+        createdAt: tutorialReleases.createdAt,
+        userId: tutorialReleases.userId,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(tutorialReleases)
+      .leftJoin(users, eq(tutorialReleases.userId, users.id))
+      .orderBy(desc(tutorialReleases.createdAt));
+
+    return releases.map(release => ({
+      ...release,
+      user: release.userId ? {
+        id: release.userId,
+        name: release.userName || '',
+        email: release.userEmail || ''
+      } : undefined
+    }));
+  }
 }
 
 export const storage = new DatabaseStorage();

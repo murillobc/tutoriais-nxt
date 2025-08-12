@@ -17,15 +17,18 @@ const API_KEY = "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0
 
 // Middleware para verificar se o usuário é administrador
 const requireAdmin = async (req: any, res: any, next: any) => {
-  if (!req.user) {
+  const userId = (req.session as any)?.userId;
+  
+  if (!userId) {
     return res.status(401).json({ message: "Não autorizado" });
   }
 
-  const user = await storage.getUser(req.user.id);
+  const user = await storage.getUser(userId);
   if (!user || user.role !== 'admin') {
     return res.status(403).json({ message: "Acesso negado - Privilégios de administrador necessários" });
   }
 
+  req.user = user; // Adicionar usuário ao request para uso posterior
   next();
 };
 
