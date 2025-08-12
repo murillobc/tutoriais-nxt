@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
-import { TutorialReleaseModal } from "@/components/TutorialReleaseModal";
+import { TutorialReleaseModal } from "@/components/tutorial-release-modal";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { TableCell } from "@/components/ui/table";
@@ -146,7 +146,16 @@ export default function Dashboard() {
 
   const generateExcelReport = async () => {
     try {
-      const response = await fetch(`/api/reports/tutorial-releases?userId=${user?.id}`, {
+      if (!user?.id) {
+        toast({
+          title: "Erro",
+          description: "Usuário não identificado. Faça login novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const response = await fetch(`/api/reports/tutorial-releases?userId=${user.id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" }
       });
@@ -213,13 +222,15 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <span>{user?.name}</span>
-                  <span className="text-gray-400">|</span>
-                  <span>{user?.email}</span>
+              {user && (
+                <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2">
+                    <span>{user.name}</span>
+                    <span className="text-gray-400">|</span>
+                    <span>{user.email}</span>
+                  </div>
                 </div>
-              </div>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
