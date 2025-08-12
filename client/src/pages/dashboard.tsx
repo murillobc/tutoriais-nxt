@@ -4,17 +4,13 @@ import {
   Plus,
   Download,
   Search,
-  Eye,
-  Edit,
-  Trash,
   LogOut,
   ClipboardList,
   Calendar,
   PlayCircle,
   Building,
   ChevronLeft,
-  ChevronRight,
-  User
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { TutorialReleaseModal } from "@/components/TutorialReleaseModal";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { TableCell } from "@/components/ui/table";
+
 
 
 interface TutorialRelease {
@@ -163,28 +159,7 @@ export default function Dashboard() {
     return names.join(', ');
   };
 
-  const formatExpirationDate = (date: string | null | undefined, status: string) => {
-    // Só mostrar data de expiração se o status for 'Sucesso'
-    if (status !== 'Sucesso' || !date) {
-      return <span className="text-gray-500">-</span>;
-    }
-    
-    const expDate = new Date(date);
-    const now = new Date();
-    const isExpired = expDate < now;
-
-    return (
-      <span className={isExpired ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
-        {expDate.toLocaleDateString('pt-BR', {
-          timeZone: 'America/Sao_Paulo',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        })}
-        {isExpired && " (Expirado)"}
-      </span>
-    );
-  };
+  
 
 
 
@@ -426,9 +401,7 @@ export default function Dashboard() {
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Empresa</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Tutoriais</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Data Criação</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Data Expiração</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Responsável</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -454,19 +427,8 @@ export default function Dashboard() {
                         <p className="text-xs text-gray-500">{formatTime(release.createdAt)}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="text-sm">
-                          {formatExpirationDate(release.expirationDate, release.status)}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
                         {getStatusBadge(release.status)}
                       </td>
-                      <TableCell>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <User className="h-4 w-4" />
-                          <span>{release.user?.name || 'N/A'}</span>
-                        </div>
-                      </TableCell>
                     </tr>
                   ))}
                 </tbody>
