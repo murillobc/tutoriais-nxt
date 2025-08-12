@@ -75,12 +75,12 @@ export default function Dashboard() {
       matchesStatus = true;
     } else if (statusFilter === "success") {
       // Para 'success', verificar se não está expirado
-      matchesStatus = release.status === 'success' && 
+      matchesStatus = release.status === 'Sucesso' && 
                      release.expirationDate && 
                      new Date(release.expirationDate) > new Date();
     } else if (statusFilter === "expired") {
-      // Para 'expired', verificar se era 'success' mas já expirou
-      matchesStatus = release.status === 'success' && 
+      // Para 'expired', verificar se era 'Sucesso' mas já expirou
+      matchesStatus = release.status === 'Sucesso' && 
                      release.expirationDate && 
                      new Date(release.expirationDate) <= new Date();
     } else {
@@ -100,7 +100,7 @@ export default function Dashboard() {
       return saoPauloReleaseDate.getMonth() === saoPauloNow.getMonth() && saoPauloReleaseDate.getFullYear() === saoPauloNow.getFullYear();
     }).length,
     active: releases.filter(r => {
-      if (r.status !== 'success') return false;
+      if (r.status !== 'Sucesso') return false;
       if (!r.expirationDate) return false;
       const now = new Date();
       const expDate = new Date(r.expirationDate);
@@ -114,8 +114,9 @@ export default function Dashboard() {
       active: "bg-green-100 text-green-800",
       pending: "bg-yellow-100 text-yellow-800",
       expired: "bg-red-100 text-red-800",
-      success: "bg-green-100 text-green-800", // Added for success status
-      failed: "bg-red-100 text-red-800"      // Added for failed status
+      success: "bg-green-100 text-green-800",
+      Sucesso: "bg-green-100 text-green-800", // Status em português
+      failed: "bg-red-100 text-red-800"
     };
 
     const statusLabels = {
@@ -123,6 +124,7 @@ export default function Dashboard() {
       pending: "Pendente",
       expired: "Expirado",
       success: "Sucesso",
+      Sucesso: "Sucesso", // Status em português
       failed: "Falha"
     };
 
@@ -162,8 +164,8 @@ export default function Dashboard() {
   };
 
   const formatExpirationDate = (date: string | null | undefined, status: string) => {
-    // Só mostrar data de expiração se o status for 'success'
-    if (status !== 'success' || !date) {
+    // Só mostrar data de expiração se o status for 'Sucesso'
+    if (status !== 'Sucesso' || !date) {
       return <span className="text-gray-500">-</span>;
     }
     
