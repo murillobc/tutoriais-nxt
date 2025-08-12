@@ -134,6 +134,124 @@ export async function sendVerificationCode(
   }
 }
 
+// Função para enviar email de boas-vindas para novos usuários criados pelo admin
+export async function sendWelcomeEmail(email: string, name: string, temporaryPassword: string): Promise<boolean> {
+  console.log("🎉 Enviando email de boas-vindas para:", email);
+  
+  try {
+    const resetLink = `https://educanextest.com.br/forgot-password`;
+    
+    const mailOptions = {
+      from: process.env.SMTP_FROM || "Portal Nextest <no-reply@educanextest.com.br>",
+      to: email,
+      subject: "Bem-vindo ao Portal Nextest - Sua conta foi criada!",
+      html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="utf-8">
+          <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+              .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+              .header { background: linear-gradient(135deg, #0075C5 0%, #1AA3F7 100%); color: white; padding: 30px; text-align: center; }
+              .content { padding: 30px; }
+              .button { display: inline-block; background: linear-gradient(135deg, #0075C5 0%, #1AA3F7 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; margin: 20px 0; }
+              .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; }
+              .credentials { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0075C5; }
+              .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0; color: #856404; }
+              .password-box { background-color: #e8f4fd; border: 2px solid #0075C5; border-radius: 8px; padding: 15px; margin: 15px 0; text-align: center; }
+              .password-text { font-family: monospace; font-size: 18px; font-weight: bold; color: #0075C5; letter-spacing: 2px; }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>🎓 Bem-vindo ao Portal Nextest!</h1>
+                  <p>Sua conta foi criada com sucesso</p>
+              </div>
+              
+              <div class="content">
+                  <h2>Olá, ${name}!</h2>
+                  
+                  <p>Sua conta no Portal Nextest foi criada por um administrador. Você agora tem acesso ao nosso sistema de gerenciamento de tutoriais.</p>
+                  
+                  <div class="credentials">
+                      <h3>📧 Suas credenciais de acesso:</h3>
+                      <p><strong>Email:</strong> ${email}</p>
+                      <p><strong>Senha temporária:</strong></p>
+                      <div class="password-box">
+                          <div class="password-text">${temporaryPassword}</div>
+                      </div>
+                  </div>
+                  
+                  <div class="warning">
+                      <h4>⚠️ Importante - Segurança da Conta</h4>
+                      <p>Por motivos de segurança, <strong>recomendamos fortemente</strong> que você altere sua senha temporária imediatamente após o primeiro login.</p>
+                  </div>
+                  
+                  <h3>🚀 Próximos passos:</h3>
+                  <ol>
+                      <li>Acesse o portal em: <a href="https://educanextest.com.br" style="color: #0075C5;">educanextest.com.br</a></li>
+                      <li>Faça login com suas credenciais acima</li>
+                      <li><strong>Altere sua senha temporária</strong> nas configurações da conta</li>
+                      <li>Explore o sistema de tutoriais disponível</li>
+                  </ol>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                      <a href="https://educanextest.com.br" class="button">🚪 Acessar Portal Nextest</a>
+                  </div>
+                  
+                  <p style="color: #666; font-size: 14px;">
+                      <strong>Dica:</strong> Se preferir, você também pode usar a opção "Esqueci minha senha" na tela de login para definir uma nova senha.
+                  </p>
+              </div>
+              
+              <div class="footer">
+                  <p>Este email foi enviado automaticamente pelo Portal Nextest</p>
+                  <p>Se você não solicitou esta conta, entre em contato com o administrador</p>
+                  <p>&copy; 2025 Nextest - Portal de Tutoriais</p>
+              </div>
+          </div>
+      </body>
+      </html>
+      `,
+      text: `
+Bem-vindo ao Portal Nextest!
+
+Olá, ${name}!
+
+Sua conta no Portal Nextest foi criada por um administrador.
+
+Credenciais de acesso:
+- Email: ${email}
+- Senha temporária: ${temporaryPassword}
+
+IMPORTANTE: Por segurança, altere sua senha temporária após o primeiro login.
+
+Próximos passos:
+1. Acesse: https://educanextest.com.br
+2. Faça login com suas credenciais
+3. Altere sua senha temporária
+4. Explore o sistema de tutoriais
+
+Portal Nextest - Sistema de Tutoriais
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email de boas-vindas enviado com sucesso!");
+    console.log("📧 Message ID:", info.messageId);
+    console.log("📧 Response:", info.response);
+    return true;
+  } catch (error) {
+    console.error(
+      "❌ Falha no envio de email de boas-vindas:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
+    return false;
+  }
+}
+
 // Função nova - Envio de código de redefinição de senha (SUA MELHORIA V2)
 export async function sendPasswordResetCode(
   email: string,

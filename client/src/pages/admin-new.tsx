@@ -52,12 +52,9 @@ const createUserSchema = z.object({
     message: 'Email deve ser do domínio @nextest.com.br'
   }),
   department: z.string().min(1, "Departamento é obrigatório"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
   role: z.enum(["user", "admin"]).default("user"),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Senhas não coincidem",
-  path: ["confirmPassword"]
 });
 
 type CreateUserData = z.infer<typeof createUserSchema>;
@@ -404,11 +401,18 @@ export default function AdminPage() {
                           name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Senha</FormLabel>
+                              <FormLabel>Senha (opcional)</FormLabel>
                               <FormControl>
-                                <Input {...field} type="password" />
+                                <Input 
+                                  {...field} 
+                                  type="password" 
+                                  placeholder="Deixe em branco para gerar automaticamente"
+                                />
                               </FormControl>
                               <FormMessage />
+                              <p className="text-xs text-gray-500">
+                                Se não informar uma senha, uma senha temporária será gerada e enviada por email
+                              </p>
                             </FormItem>
                           )}
                         />
@@ -417,9 +421,13 @@ export default function AdminPage() {
                           name="confirmPassword"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Confirmar Senha</FormLabel>
+                              <FormLabel>Confirmar Senha (opcional)</FormLabel>
                               <FormControl>
-                                <Input {...field} type="password" />
+                                <Input 
+                                  {...field} 
+                                  type="password" 
+                                  placeholder="Confirme a senha se informada acima"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

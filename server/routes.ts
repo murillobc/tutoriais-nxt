@@ -8,12 +8,22 @@ declare module "express-session" {
 }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { sendPasswordResetCode } from "./services/emailService";
+import { sendPasswordResetCode, sendWelcomeEmail } from "./services/emailService";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 // API Key para autenticação dos endpoints de consulta
 const API_KEY = "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1";
+
+// Função para gerar senha temporária segura
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let result = '';
+  for (let i = 0; i < 12; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 // Middleware para verificar se o usuário é administrador
 const requireAdmin = async (req: any, res: any, next: any) => {
@@ -88,6 +98,18 @@ const registerSchema = z.object({
 }).refine(data => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"]
+});
+
+// Schema específico para criação por admin (senha opcional)
+const adminCreateUserSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email().refine(email => email.endsWith('@nextest.com.br'), {
+    message: 'Email deve ser do domínio @nextest.com.br'
+  }),
+  department: z.string().min(1, "Departamento é obrigatório"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional(),
+  confirmPassword: z.string().optional(),
+  role: z.enum(["user", "admin"]).optional().default("user"),
 });
 
 const tutorialReleaseSchema = z.object({
@@ -660,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
     try {
       const adminUserId = (req.session as any).userId;
-      const userData = registerSchema.parse(req.body);
+      const userData = adminCreateUserSchema.parse(req.body);
       
       // Verificar se email já existe
       const existingUser = await storage.getUserByEmail(userData.email);
@@ -668,8 +690,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email já cadastrado" });
       }
 
+      // Gerar senha temporária se não fornecida
+      const temporaryPassword = userData.password || generateTemporaryPassword();
+      
       // Hash da senha
-      const passwordHash = await bcrypt.hash(userData.password, 10);
+      const passwordHash = await bcrypt.hash(temporaryPassword, 10);
 
       // Criar usuário
       const user = await storage.createUser({
@@ -682,8 +707,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: adminUserId,
       });
 
+      // Enviar email de boas-vindas com senha temporária
+      try {
+        const emailSent = await sendWelcomeEmail(userData.email, userData.name, temporaryPassword);
+        if (emailSent) {
+          console.log("✅ Email de boas-vindas enviado para:", userData.email);
+        } else {
+          console.log("⚠️ Falha no envio de email de boas-vindas para:", userData.email);
+        }
+      } catch (emailError) {
+        console.error("❌ Erro ao enviar email de boas-vindas:", emailError);
+        // Não falhar a criação do usuário por causa do email
+      }
+
       res.status(201).json({
-        message: "Usuário criado com sucesso",
+        message: "Usuário criado com sucesso e email de boas-vindas enviado",
         user: { ...user, password: undefined }
       });
     } catch (error) {
