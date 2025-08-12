@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { TutorialReleaseModal } from "@/components/TutorialReleaseModal";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { formatCpf, formatCnpj, formatDocument } from "@/lib/formatters";
 import { BulkUploadModal } from "@/components/BulkUploadModal";
 
 
@@ -197,10 +198,10 @@ export default function Dashboard() {
       filteredData.forEach((release: any) => {
         worksheetData.push([
           release.clientName,
-          release.clientCpf,
+          formatCpf(release.clientCpf),
           release.clientEmail,
           release.companyName,
-          release.companyDocument,
+          formatCnpj(release.companyDocument),
           release.companyRole,
           release.status === 'success' ? 'Sucesso' :
           release.status === 'pending' ? 'Pendente' :
@@ -414,13 +415,13 @@ export default function Dashboard() {
                         <div>
                           <p className="font-medium text-nextest-dark">{release.clientName}</p>
                           <p className="text-sm text-gray-600">{release.clientEmail}</p>
-                          <p className="text-xs text-gray-500">{release.clientCpf}</p>
+                          <p className="text-xs text-gray-500">{formatCpf(release.clientCpf)}</p>
                         </div>
                       </td>
                       <td className="py-4 px-4">
                         <div>
                           <p className="text-sm font-medium">{release.companyName}</p>
-                          <p className="text-xs text-gray-500">{release.companyDocument || 'CNPJ não informado'}</p>
+                          <p className="text-xs text-gray-500">{release.companyDocument ? formatCnpj(release.companyDocument) : 'CNPJ não informado'}</p>
                         </div>
                       </td>
                       <td className="py-4 px-4">

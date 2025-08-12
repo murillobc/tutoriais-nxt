@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { usePipeCompany } from "@/hooks/usePipeCompany";
+import { isValidCpf, isValidCnpj, formatCpf, formatCnpj } from "@/lib/formatters";
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -160,6 +161,9 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
       if (!client.clientCpf || client.clientCpf.length < 11) {
         client.errors.push('CPF é obrigatório');
         client.isValid = false;
+      } else if (!isValidCpf(client.clientCpf)) {
+        client.errors.push('CPF inválido');
+        client.isValid = false;
       }
       if (!client.clientEmail || !client.clientEmail.includes('@')) {
         client.errors.push('Email válido é obrigatório');
@@ -171,6 +175,9 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
       }
       if (!client.companyDocument || client.companyDocument.length < 14) {
         client.errors.push('CNPJ é obrigatório');
+        client.isValid = false;
+      } else if (!isValidCnpj(client.companyDocument)) {
+        client.errors.push('CNPJ inválido');
         client.isValid = false;
       }
       if (!client.companyRole) {
@@ -432,7 +439,9 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-sm">{client.clientName}</p>
-                          <p className="text-xs text-gray-600">{client.clientEmail} • {client.companyName}</p>
+                          <p className="text-xs text-gray-600">
+                            {client.clientEmail} • {formatCpf(client.clientCpf)} • {client.companyName} • {formatCnpj(client.companyDocument)}
+                          </p>
                         </div>
                         <div className="flex items-center space-x-2">
                           {client.isValid ? (

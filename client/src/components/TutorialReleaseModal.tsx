@@ -13,14 +13,19 @@ import { apiRequest } from "@/lib/queryClient";
 import { InputMask } from "@/components/ui/input-mask";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePipeCompany } from "@/hooks/usePipeCompany";
+import { isValidCpf, isValidCnpj } from "@/lib/formatters";
 
 const tutorialReleaseSchema = z.object({
   clientName: z.string().min(1, "Nome é obrigatório"),
-  clientCpf: z.string().min(11, "CPF é obrigatório"),
+  clientCpf: z.string()
+    .min(11, "CPF é obrigatório")
+    .refine(isValidCpf, "CPF inválido"),
   clientEmail: z.string().email("Email inválido"),
   clientPhone: z.string().optional(),
   companyName: z.string().min(1, "Nome da empresa é obrigatório"),
-  companyDocument: z.string().min(14, "CNPJ é obrigatório"),
+  companyDocument: z.string()
+    .min(14, "CNPJ é obrigatório")
+    .refine(isValidCnpj, "CNPJ inválido"),
   companyRole: z.string().min(1, "Cargo é obrigatório"),
   tutorialIds: z.array(z.string()).min(1, "Selecione pelo menos um tutorial"),
 });
