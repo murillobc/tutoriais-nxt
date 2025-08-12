@@ -568,17 +568,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Remove formatação do CNPJ (deixa só números)
       const cleanCnpj = cnpj.replace(/\D/g, '');
+      console.log(`🔍 Buscando empresa com CNPJ: ${cleanCnpj}`);
 
-      const response = await fetch(`https://api.pipe.run/v1/companies?doc=${cleanCnpj}`, {
+      const url = `https://api.pipe.run/v1/companies?cnpj=${cleanCnpj}`;
+      console.log(`📡 URL da requisição: ${url}`);
+
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${PIPE_API_KEY}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       });
 
       if (!response.ok) {
-        console.error('Pipe API error:', response.status, await response.text());
-        return res.status(response.status).json({ error: "Erro ao consultar API do Pipe" });
+        const errorText = await response.text();
+        console.error('Pipe API error:', response.status, errorText);
+        return res.status(response.status).json({ 
+          error: "Erro ao consultar API do Pipe",
+          details: errorText,
+          status: response.status
+        });
       }
 
       const data = await response.json();
