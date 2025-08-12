@@ -2,7 +2,15 @@
 
 This is a tutorial release management system for Nextest, designed to allow employees to create and manage tutorial access for external clients. The application features a React frontend built with TypeScript, Vite, and shadcn/ui components, paired with an Express backend using Drizzle ORM for PostgreSQL database management. The system implements email-based authentication with verification codes, restricted to @nextest.com.br domain users, and provides a comprehensive dashboard for managing tutorial releases with client information tracking.
 
-## Recent Updates (v2.1 - August 2025)
+## Recent Updates (v2.2 - August 2025)
+- ✅ **Public API Integration**: Replaced Pipe CRM with free public APIs for CNPJ lookup
+- ✅ **Fallback System**: Implemented 4-tier API fallback (BrasilAPI → ReceitaWS → AwesomeAPI → CNPJá)
+- ✅ **CNPJ Validation**: Added official Brazilian CNPJ validation algorithm with digit verification
+- ✅ **Document Formatting**: Complete CPF (000.000.000-00) and CNPJ (00.000.000/0000-00) formatting
+- ✅ **Enhanced Data**: Now retrieves complete company data (address, activity, legal status, etc.)
+- ✅ **Zero Cost**: Eliminated dependency on paid CRM API, now 100% free public data sources
+
+## Previous Updates (v2.1 - August 2025)
 - ✅ **Expiration System**: Added automatic 90-day expiration for tutorial releases when status changes to "success"
 - ✅ **Auto-Expiration**: Automated system to mark releases as "expired" when expiration date is reached
 - ✅ **Report Generation**: PDF and Excel export functionality for tutorial releases data
@@ -41,6 +49,8 @@ Preferred communication style: Simple, everyday language.
 ## Key Features
 - **Domain-Restricted Authentication**: Only @nextest.com.br email addresses can register and login
 - **Tutorial Release Management**: Track client details (name, CPF, email, company) and assigned tutorials
+- **Public CNPJ Integration**: Automatic company lookup using free Brazilian government APIs with fallback system
+- **Document Validation**: Official CPF and CNPJ validation with Brazilian standard formatting
 - **Dashboard Analytics**: Display statistics for total releases, monthly counts, active releases, and company metrics
 - **Search and Filtering**: Client and release search functionality with status filtering including expired status
 - **Input Validation**: CPF and phone number masking with comprehensive form validation
@@ -59,6 +69,13 @@ Preferred communication style: Simple, everyday language.
 ## Email Services
 - **Resend SMTP**: Configured to use smtp.resend.com on port 587 for reliable email delivery
 - **Nodemailer**: Email sending library with HTML template support and Resend integration
+
+## Public APIs (CNPJ Lookup)
+- **BrasilAPI**: Primary source - https://brasilapi.com.br/api/cnpj/v1/{cnpj} (CORS enabled)
+- **ReceitaWS**: Secondary - https://www.receitaws.com.br/v1/cnpj/{cnpj} (via proxy)
+- **AwesomeAPI**: Tertiary - https://cep.awesomeapi.com.br/json/{cnpj} (CORS enabled)
+- **CNPJá Open**: Fallback - https://open.cnpja.com/office/{cnpj} (via proxy)
+- **AllOrigins Proxy**: CORS proxy service for APIs without CORS support
 
 ## UI Framework
 - **Radix UI**: Accessible component primitives for complex UI elements
