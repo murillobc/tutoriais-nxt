@@ -10,8 +10,10 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   department: text("department").notNull(),
   password: text("password"), // Optional - users can use either password or email code
+  role: text("role").default("user").notNull(), // "admin" ou "user"
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id), // Quem criou este usuário
 });
 
 export const verificationCodes = pgTable("verification_codes", {
@@ -59,8 +61,14 @@ export const tutorialReleases = pgTable("tutorial_releases", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   tutorialReleases: many(tutorialReleases),
+  createdUsers: many(users, { relationName: "creator" }),
+  creator: one(users, {
+    fields: [users.createdBy],
+    references: [users.id],
+    relationName: "creator"
+  }),
 }));
 
 export const tutorialReleasesRelations = relations(tutorialReleases, ({ one }) => ({

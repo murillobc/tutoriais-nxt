@@ -10,7 +10,8 @@ import {
   PlayCircle,
   Building,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCpf, formatCnpj, formatDocument } from "@/lib/formatters";
 import { BulkUploadModal } from "@/components/BulkUploadModal";
+import { Link } from "wouter";
 
 
 interface TutorialRelease {
@@ -251,6 +253,14 @@ export default function Dashboard() {
                     <span>{user.email}</span>
                   </div>
                 </div>
+              )}
+              {user?.role === 'admin' && (
+                <Link href="/admin">
+                  <Button variant="ghost" size="sm" className="text-yellow-600 hover:bg-yellow-50">
+                    <Crown className="h-4 w-4 mr-1" />
+                    Admin
+                  </Button>
+                </Link>
               )}
               <Button
                 variant="ghost"

@@ -24,6 +24,12 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(id: string, password: string): Promise<void>;
+  
+  // Admin user management
+  getAllUsers(): Promise<(User & { creator?: User })[]>;
+  updateUser(id: string, updates: Partial<User>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
+  getUserStats(): Promise<any>;
 
   // Verification codes
   createVerificationCode(code: InsertVerificationCode): Promise<VerificationCode>;
@@ -384,6 +390,73 @@ export class DatabaseStorage implements IStorage {
       .update(jobRoles)
       .set({ active: false })
       .where(eq(jobRoles.id, id));
+  }
+
+  // Admin user management methods
+  async getAllUsers(): Promise<(User & { creator?: User })[]> {
+    const result = await db
+      .select({
+        user: users,
+        creator: {
+          id: sql`creator.id`,
+          name: sql`creator.name`,
+          email: sql`creator.email`,
+          department: sql`creator.department`,
+          role: sql`creator.role`,
+          isActive: sql`creator.is_active`,
+          createdAt: sql`creator.created_at`,
+          createdBy: sql`creator.created_by`,
+        }
+      })
+      .from(users)
+      .leftJoin(sql`users as creator`, sql`creator.id = users.created_by`)
+      .orderBy(desc(users.createdAt));
+
+    return result.map(row => ({
+      ...row.user,
+      creator: row.creator.id ? row.creator as User : undefined
+    }));
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async getUserStats(): Promise<any> {
+    const totalUsersResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(eq(users.isActive, true));
+
+    const totalAdminsResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(and(eq(users.isActive, true), eq(users.role, 'admin')));
+
+    const totalReleasesResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(tutorialReleases);
+
+    const thisMonthReleasesResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(tutorialReleases)
+      .where(sql`DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)`);
+
+    return {
+      totalUsers: totalUsersResult[0]?.count || 0,
+      totalAdmins: totalAdminsResult[0]?.count || 0,
+      totalReleases: totalReleasesResult[0]?.count || 0,
+      releasesThisMonth: thisMonthReleasesResult[0]?.count || 0,
+    };
   }
 }
 

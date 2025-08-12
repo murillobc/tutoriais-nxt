@@ -15,6 +15,20 @@ import { z } from "zod";
 // API Key para autenticação dos endpoints de consulta
 const API_KEY = "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0i3j6k9l2m5n8o1p4r7s0t3u6v9w2x5y8z1";
 
+// Middleware para verificar se o usuário é administrador
+const requireAdmin = async (req: any, res: any, next: any) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Não autorizado" });
+  }
+
+  const user = await storage.getUser(req.user.id);
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ message: "Acesso negado - Privilégios de administrador necessários" });
+  }
+
+  next();
+};
+
 // Middleware de autenticação por API Key
 function requireApiKey(req: any, res: any, next: any) {
   const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
@@ -66,7 +80,8 @@ const registerSchema = z.object({
   }),
   department: z.string().min(1),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  role: z.enum(['user', 'admin']).optional()
 }).refine(data => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"]
@@ -622,6 +637,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get user error:', error);
       res.status(500).json({ message: "Erro ao buscar usuário" });
+    }
+  });
+
+  // ROTAS ADMINISTRATIVAS
+  
+  // Buscar todos os usuários (admin)
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error('Admin get users error:', error);
+      res.status(500).json({ message: "Erro ao buscar usuários" });
+    }
+  });
+
+  // Criar novo usuário (admin)
+  app.post("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const adminUserId = (req.session as any).userId;
+      const userData = registerSchema.parse(req.body);
+      
+      // Verificar se email já existe
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email já cadastrado" });
+      }
+
+      // Hash da senha
+      const passwordHash = await bcrypt.hash(userData.password, 10);
+
+      // Criar usuário
+      const user = await storage.createUser({
+        name: userData.name,
+        email: userData.email,
+        department: userData.department,
+        password: passwordHash,
+        role: userData.role || 'user',
+        isActive: true,
+        createdBy: adminUserId,
+      });
+
+      res.status(201).json({
+        message: "Usuário criado com sucesso",
+        user: { ...user, password: undefined }
+      });
+    } catch (error) {
+      console.error('Admin create user error:', error);
+      res.status(500).json({ message: "Erro ao criar usuário" });
+    }
+  });
+
+  // Atualizar usuário (admin)
+  app.patch("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      // Não permitir atualização de campos sensíveis
+      const allowedFields = ['name', 'email', 'department', 'role', 'isActive'];
+      const filteredUpdates = Object.keys(updates)
+        .filter(key => allowedFields.includes(key))
+        .reduce((obj, key) => {
+          obj[key] = updates[key];
+          return obj;
+        }, {} as any);
+
+      const user = await storage.updateUser(id, filteredUpdates);
+      res.json({ message: "Usuário atualizado com sucesso", user });
+    } catch (error) {
+      console.error('Admin update user error:', error);
+      res.status(500).json({ message: "Erro ao atualizar usuário" });
+    }
+  });
+
+  // Deletar usuário (admin)
+  app.delete("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminUserId = (req.session as any).userId;
+
+      // Não permitir que admin delete a si mesmo
+      if (id === adminUserId) {
+        return res.status(400).json({ message: "Você não pode deletar sua própria conta" });
+      }
+
+      await storage.deleteUser(id);
+      res.json({ message: "Usuário removido com sucesso" });
+    } catch (error) {
+      console.error('Admin delete user error:', error);
+      res.status(500).json({ message: "Erro ao remover usuário" });
+    }
+  });
+
+  // Estatísticas administrativas
+  app.get("/api/admin/stats", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getUserStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Admin stats error:', error);
+      res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+  });
+
+  // Todas as liberações de tutoriais (admin)
+  app.get("/api/admin/tutorial-releases", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const releases = await storage.getAllTutorialReleases();
+      res.json(releases);
+    } catch (error) {
+      console.error('Admin get all releases error:', error);
+      res.status(500).json({ message: "Erro ao buscar liberações" });
     }
   });
 
