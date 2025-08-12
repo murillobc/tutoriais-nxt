@@ -14,8 +14,7 @@ import {
   Building,
   ChevronLeft,
   ChevronRight,
-  User,
-  FileText
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +55,7 @@ export default function Dashboard() {
 
   const { data: releases = [], isLoading, refetch: refetchReleases } = useQuery<TutorialRelease[]>({
     queryKey: ["/api/tutorial-releases"],
+    select: (data) => data.filter(release => release.user?.id === user?.id), // Filtrar apenas releases do usuário atual
   });
 
   const { data: tutorials = [] } = useQuery({
@@ -143,63 +143,11 @@ export default function Dashboard() {
     );
   };
 
-  const generatePDFReport = async () => {
-    try {
-      const response = await fetch("/api/reports/tutorial-releases", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" }
-      });
-      
-      if (!response.ok) throw new Error("Erro ao buscar dados do relatório");
-      
-      const data = await response.json();
-      
-      // Importar dinamicamente jsPDF e jspdf-autotable
-      const { jsPDF } = await import('jspdf');
-      await import('jspdf-autotable');
-      
-      const doc = new jsPDF();
-      
-      // Título
-      doc.setFontSize(16);
-      doc.text('Relatório de Liberações de Tutoriais', 20, 20);
-      
-      // Data do relatório
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 20, 30);
-      
-      // Preparar dados da tabela
-      const tableData = data.map((release: any) => [
-        release.clientName,
-        release.clientCpf,
-        release.companyName,
-        release.status === 'success' ? 'Sucesso' : 
-        release.status === 'pending' ? 'Pendente' :
-        release.status === 'failed' ? 'Falha' : 'Expirado',
-        formatDate(release.createdAt),
-        release.expirationDate ? formatDate(release.expirationDate) : 'N/A',
-        release.user.name
-      ]);
-      
-      // Gerar tabela
-      (doc as any).autoTable({
-        head: [['Cliente', 'CPF', 'Empresa', 'Status', 'Data Criação', 'Data Expiração', 'Responsável']],
-        body: tableData,
-        startY: 40,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [0, 117, 197] }
-      });
-      
-      doc.save('relatorio-tutoriais.pdf');
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      alert('Erro ao gerar relatório PDF');
-    }
-  };
+  
 
   const generateExcelReport = async () => {
     try {
-      const response = await fetch("/api/reports/tutorial-releases", {
+      const response = await fetch(`/api/reports/tutorial-releases?userId=${user?.id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" }
       });
@@ -207,6 +155,9 @@ export default function Dashboard() {
       if (!response.ok) throw new Error("Erro ao buscar dados do relatório");
       
       const data = await response.json();
+      
+      // Filtrar apenas as liberações do usuário atual
+      const filteredData = data.filter((release: any) => release.user?.id === user?.id);
       
       // Importar dinamicamente XLSX
       const XLSX = await import('xlsx');
@@ -216,7 +167,7 @@ export default function Dashboard() {
         ['Cliente', 'CPF', 'Email', 'Empresa', 'CNPJ', 'Cargo', 'Status', 'Data Criação', 'Data Expiração', 'Responsável']
       ];
       
-      data.forEach((release: any) => {
+      filteredData.forEach((release: any) => {
         worksheetData.push([
           release.clientName,
           release.clientCpf,
@@ -393,16 +344,6 @@ export default function Dashboard() {
 
               {/* Report Buttons */}
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={generatePDFReport}
-                  className="bg-white/50"
-                  data-testid="button-export-pdf"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  PDF
-                </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 

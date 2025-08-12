@@ -277,15 +277,17 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(tutorialReleases.userId, users.id));
 
     // Aplicar filtros se fornecidos
-    let results;
-    if (filters?.status && filters.status !== 'all') {
-      results = await baseQuery
-        .where(eq(tutorialReleases.status, filters.status))
-        .orderBy(desc(tutorialReleases.createdAt));
-    } else {
-      results = await baseQuery
-        .orderBy(desc(tutorialReleases.createdAt));
+    let queryWithFilters = baseQuery;
+    
+    if (filters?.userId) {
+      queryWithFilters = queryWithFilters.where(eq(tutorialReleases.userId, filters.userId));
     }
+    
+    if (filters?.status && filters.status !== 'all') {
+      queryWithFilters = queryWithFilters.where(eq(tutorialReleases.status, filters.status));
+    }
+    
+    const results = await queryWithFilters.orderBy(desc(tutorialReleases.createdAt));
     
     return results.filter(result => result.user !== null) as (TutorialRelease & { user: User })[];
   }

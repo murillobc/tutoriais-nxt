@@ -18,15 +18,15 @@ const API_KEY = "nxt_api_2025_b8f4c9e1a7d3f6h9j2k5m8p1q4r7s0t3v6w9z2a5c8e1f4g7h0
 // Middleware de autenticação por API Key
 function requireApiKey(req: any, res: any, next: any) {
   const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-  
+
   if (!apiKey || apiKey !== API_KEY) {
     console.log('❌ API Key inválida ou ausente:', apiKey ? 'key fornecida mas incorreta' : 'nenhuma key fornecida');
-    return res.status(401).json({ 
+    return res.status(401).json({
       error: "API Key inválida ou ausente",
       message: "Forneça uma API Key válida no header 'x-api-key' ou 'Authorization: Bearer <key>'"
     });
   }
-  
+
   console.log('✅ API Key válida - acesso autorizado');
   next();
 }
@@ -87,12 +87,21 @@ function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Middleware de autenticação de sessão
+function requireAuth(req: Request, res: Response, next: any) {
+  if ((req.session as any)?.userId) {
+    next();
+  } else {
+    res.status(401).json({ message: "Não autorizado. Faça login primeiro." });
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = loginSchema.parse(req.body);
-      
+
       // Check if user exists
       const user = await storage.getUserByEmail(email);
       if (!user) {
@@ -111,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session for login
       req.session = req.session || {};
       (req.session as any).userId = user.id;
-      
+
       res.json({ user, message: "Login realizado com sucesso" });
     } catch (error) {
       console.error('Login error:', error);
@@ -124,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = registerSchema.parse(req.body);
-      
+
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
@@ -150,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = forgotPasswordSchema.parse(req.body);
-      
+
       // Check if user exists
       const user = await storage.getUserByEmail(email);
       if (!user) {
@@ -171,8 +180,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ message: "Código de redefinição de senha enviado" });
       } catch (emailError) {
         console.error('Email sending failed, but code created:', emailError);
-        res.json({ 
-          message: "Código de redefinição gerado. Verifique o console para o código (email não enviado)",
+        res.json({
+          message: "Código de redefinição de senha enviado. Verifique seu email.",
           debugCode: code // For debugging only - remove in production
         });
       }
@@ -185,14 +194,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
       const { email, code, newPassword } = resetPasswordSchema.parse(req.body);
-      
+
       const verificationCode = await storage.getValidVerificationCode(email, code);
       if (!verificationCode) {
         return res.status(400).json({ message: "Código inválido ou expirado" });
       }
 
       await storage.markVerificationCodeAsUsed(verificationCode.id);
-      
+
       // Update user password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       const user = await storage.getUserByEmail(email);
@@ -224,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/job-roles", async (req, res) => {
     try {
       const { type } = req.query;
-      
+
       if (type && (type === 'department' || type === 'client_role')) {
         const roles = await storage.getJobRolesByType(type as 'department' | 'client_role');
         res.json(roles);
@@ -243,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!(req.session as any)?.userId) {
         return res.status(401).json({ message: "Não autorizado" });
       }
-      
+
       const roleData = req.body;
       const role = await storage.createJobRole(roleData);
       res.status(201).json(role);
@@ -258,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!(req.session as any)?.userId) {
         return res.status(401).json({ message: "Não autorizado" });
       }
-      
+
       const { id } = req.params;
       const roleData = req.body;
       await storage.updateJobRole(id, roleData);
@@ -274,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!(req.session as any)?.userId) {
         return res.status(401).json({ message: "Não autorizado" });
       }
-      
+
       const { id } = req.params;
       await storage.deleteJobRole(id);
       res.json({ success: true });
@@ -296,12 +305,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tutorial releases routes
-  app.post("/api/tutorial-releases", async (req, res) => {
+  app.post("/api/tutorial-releases", requireAuth, async (req, res) => {
     try {
-      if (!(req.session as any)?.userId) {
-        return res.status(401).json({ message: "Não autorizado" });
-      }
-
       const releaseData = tutorialReleaseSchema.parse(req.body);
       const release = await storage.createTutorialRelease({
         ...releaseData,
@@ -323,13 +328,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/tutorial-releases", async (req, res) => {
+  app.get("/api/tutorial-releases", requireAuth, async (req, res) => {
     try {
-      if (!(req.session as any)?.userId) {
-        return res.status(401).json({ message: "Não autorizado" });
-      }
-
-      const releases = await storage.getAllTutorialReleases();
+      const userId = (req.session as any).userId;
+      const releases = await storage.getTutorialReleasesByUserId(userId); // Changed to filter by userId
       res.json(releases);
     } catch (error) {
       console.error('Get releases error:', error);
@@ -342,10 +344,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // This endpoint can be used by external systems
       const releaseData = tutorialReleaseSchema.parse(req.body);
-      
+
       // For webhook, we'll need to identify the user somehow
       // You might want to add API key validation here
-      
+
       res.json({ message: "Webhook recebido com sucesso", data: releaseData });
     } catch (error) {
       console.error('Webhook error:', error);
@@ -353,21 +355,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get current user
   // Status tracking API for external confirmations (requer API Key)
   app.post("/api/tutorial-releases/:id/status", requireApiKey, async (req, res) => {
     try {
       const { id } = req.params;
       const { status, message } = req.body;
-      
+
       if (!['pending', 'success', 'failed'].includes(status)) {
         return res.status(400).json({ message: "Status inválido. Use: pending, success, failed" });
       }
 
       await storage.updateTutorialReleaseStatus(id, status);
-      
+
       console.log(`Tutorial release ${id} status updated to: ${status}`, message ? `- ${message}` : '');
-      
+
       res.json({ message: "Status atualizado com sucesso", releaseId: id, status });
     } catch (error) {
       console.error('Update status error:', error);
@@ -379,21 +380,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tutorial-releases/status/:status", requireApiKey, async (req, res) => {
     try {
       res.setHeader('Content-Type', 'application/json');
-      
+
       const { status } = req.params;
-      
+
       if (!['pending', 'success', 'failed'].includes(status)) {
         return res.status(400).json({ message: "Status inválido. Use: pending, success, failed" });
       }
 
       const releases = await storage.getTutorialReleasesByStatus(status);
-      
+
       console.log(`API consulta tutorial releases com status: ${status} - encontrados: ${releases.length}`);
-      
-      res.json({ 
+
+      res.json({
         status: status,
         count: releases.length,
-        releases: releases 
+        releases: releases
       });
     } catch (error) {
       console.error('Get releases by status error:', error);
@@ -406,12 +407,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Forçar content-type JSON
       res.setHeader('Content-Type', 'application/json');
-      
+
       const releases = await storage.getTutorialReleasesByStatus('pending');
-      
+
       console.log(`API consulta tutoriais pendentes - encontrados: ${releases.length}`);
-      
-      res.json({ 
+
+      res.json({
         count: releases.length,
         pending_releases: releases.map(release => ({
           id: release.id,
@@ -434,12 +435,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/tutorial-releases/pending", requireApiKey, async (req, res) => {
     try {
       res.setHeader('Content-Type', 'application/json');
-      
+
       const releases = await storage.getTutorialReleasesByStatus('pending');
-      
+
       console.log(`🔄 API alternativa consulta tutoriais pendentes - encontrados: ${releases.length}`);
-      
-      res.json({ 
+
+      res.json({
         count: releases.length,
         pending_releases: releases.map(release => ({
           id: release.id,
@@ -460,11 +461,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tutorial-releases/stats", requireApiKey, async (req, res) => {
     try {
       res.setHeader('Content-Type', 'application/json');
-      
+
       const stats = await storage.getTutorialReleaseStats();
-      
+
       console.log('API consulta estatísticas de tutorial releases');
-      
+
       res.json(stats);
     } catch (error) {
       console.error('Get release stats error:', error);
@@ -473,17 +474,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint para gerar relatórios
-  app.get("/api/reports/tutorial-releases", async (req, res) => {
+  app.get("/api/reports/tutorial-releases", requireAuth, async (req, res) => {
     try {
-      if (!(req.session as any)?.userId) {
-        return res.status(401).json({ message: "Não autorizado" });
-      }
-
+      const userId = (req.session as any)?.userId;
       const { status, format = 'json' } = req.query;
-      
-      const filters = status ? { status } : {};
+
+      const filters = { ...(status && { status }), ...(userId && { userId }) };
       const releases = await storage.getTutorialReleasesForReport(filters);
-      
+
       if (format === 'json') {
         res.json(releases);
       } else {
@@ -522,10 +520,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 // Webhook function to send tutorial release data
 async function sendTutorialReleaseWebhook(release: any, releaseData: any) {
   const webhookUrl = "https://wfapi.automai.com.br/webhook/cadastro/cademi";
-  
+
   // Get tutorial details for the selected tutorials
   const tutorials = await storage.getTutorialsByIds(releaseData.tutorialIds);
-  
+
   // Prepare webhook payload - this is a generic structure, please provide the exact format
   const webhookPayload = {
     id: release.id,
@@ -552,7 +550,7 @@ async function sendTutorialReleaseWebhook(release: any, releaseData: any) {
   };
 
   console.log('Sending webhook payload:', JSON.stringify(webhookPayload, null, 2));
-  
+
   const response = await fetch(webhookUrl, {
     method: 'POST',
     headers: {
@@ -567,6 +565,6 @@ async function sendTutorialReleaseWebhook(release: any, releaseData: any) {
 
   const responseData = await response.text();
   console.log('Webhook response:', responseData);
-  
+
   return responseData;
 }
