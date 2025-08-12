@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { InputMask } from "@/components/ui/input-mask";
-import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { DynamicSelectContent } from "@/components/DynamicSelectContent";
 
 
@@ -235,3 +235,84 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                     <SelectTrigger className="w-full" data-testid="select-company-role">
                       <SelectValue placeholder="Selecione um cargo" />
                     </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Engenheiro">Engenheiro</SelectItem>
+                      <SelectItem value="Desenvolvedor">Desenvolvedor</SelectItem>
+                      <SelectItem value="Gerente">Gerente</SelectItem>
+                      <SelectItem value="Analista">Analista</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.companyRole && (
+                    <p className="text-sm text-red-500">{form.formState.errors.companyRole.message}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Tutorial Selection Section */}
+            <div className="form-section">
+              <h3 className="text-lg font-semibold text-nextest-dark mb-4 flex items-center">
+                <PlayCircle className="mr-3 h-5 w-5 text-nextest-blue" />
+                Seleção de Tutoriais
+              </h3>
+              <div className="mb-4 flex items-center gap-4">
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                  <Input
+                    placeholder="Buscar tutoriais..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-search-tutorial"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-60 overflow-y-auto">
+                {filteredTutorials.map((tutorial) => (
+                  <div
+                    key={tutorial.id}
+                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                      selectedTutorials.includes(tutorial.id)
+                        ? "border-nextest-blue bg-nextest-blue/10"
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                    onClick={() => toggleTutorial(tutorial.id)}
+                    data-testid={`tutorial-item-${tutorial.id}`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-nextest-dark">{tutorial.name}</h4>
+                      {selectedTutorials.includes(tutorial.id) && (
+                        <Check className="h-5 w-5 text-nextest-blue" />
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">{tutorial.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">Tag: {tutorial.tag}</p>
+                  </div>
+                ))}
+              </div>
+              {form.formState.errors.tutorialIds && (
+                <p className="text-sm text-red-500 mt-2">{form.formState.errors.tutorialIds.message}</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4 pt-6 border-t border-white/20">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                data-testid="button-cancel-release"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" data-testid="button-confirm-release" disabled={createReleaseMutation.isPending}>
+                {createReleaseMutation.isPending ? "Liberando..." : "Liberar Tutoriais"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
