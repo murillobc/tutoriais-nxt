@@ -79,24 +79,24 @@ export async function sendVerificationCode(
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #0075C5 0%, #01283E 100%);">
         <div style="background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 40px; text-align: center;">
           <img src="https://educanextest.com.br/wp-content/uploads/2024/04/Group-13Logo-Horizontal-Educa-SVG-Fix.svg" alt="Educa Nextest Logo" style="max-width: 200px; margin-bottom: 30px;">
-          
+
           <h1 style="color: #01283E; font-size: 28px; margin-bottom: 20px;">Código de Verificação</h1>
-          
+
           <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
             Use o código abaixo para acessar o Portal de Tutoriais Nextest:
           </p>
-          
+
           <div style="background: #f8f9fa; border: 2px solid #e1e5e9; border-radius: 12px; padding: 20px; margin: 30px 0;">
             <div style="font-family: monospace; font-size: 32px; font-weight: bold; color: #0075C5; letter-spacing: 8px;">
               ${code}
             </div>
           </div>
-          
+
           <p style="color: #999; font-size: 14px; margin-top: 30px;">
             Este código é válido por 10 minutos.<br>
             Se você não solicitou este código, ignore este email.
           </p>
-          
+
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e1e5e9;">
             <p style="color: #666; font-size: 12px;">
               © 2025 Nextest. Todos os direitos reservados.
@@ -137,10 +137,10 @@ export async function sendVerificationCode(
 // Função para enviar email de boas-vindas para novos usuários criados pelo admin
 export async function sendWelcomeEmail(email: string, name: string, temporaryPassword: string): Promise<boolean> {
   console.log("🎉 Enviando email de boas-vindas para:", email);
-  
+
   try {
-    const resetLink = `https://educanextest.com.br/forgot-password`;
-    
+    const resetLink = `https://tutoriais.educanextest.com.br/forgot-password`;
+
     const mailOptions = {
       from: process.env.SMTP_FROM || "Portal Nextest <no-reply@educanextest.com.br>",
       to: email,
@@ -169,12 +169,12 @@ export async function sendWelcomeEmail(email: string, name: string, temporaryPas
                   <h1>🎓 Bem-vindo ao Portal Nextest!</h1>
                   <p>Sua conta foi criada com sucesso</p>
               </div>
-              
+
               <div class="content">
                   <h2>Olá, ${name}!</h2>
-                  
+
                   <p>Sua conta no Portal Nextest foi criada por um administrador. Você agora tem acesso ao nosso sistema de gerenciamento de tutoriais.</p>
-                  
+
                   <div class="credentials">
                       <h3>📧 Suas credenciais de acesso:</h3>
                       <p><strong>Email:</strong> ${email}</p>
@@ -183,29 +183,29 @@ export async function sendWelcomeEmail(email: string, name: string, temporaryPas
                           <div class="password-text">${temporaryPassword}</div>
                       </div>
                   </div>
-                  
+
                   <div class="warning">
                       <h4>⚠️ Importante - Segurança da Conta</h4>
                       <p>Por motivos de segurança, <strong>recomendamos fortemente</strong> que você altere sua senha temporária imediatamente após o primeiro login.</p>
                   </div>
-                  
+
                   <h3>🚀 Próximos passos:</h3>
                   <ol>
-                      <li>Acesse o portal em: <a href="https://educanextest.com.br" style="color: #0075C5;">educanextest.com.br</a></li>
+                      <li>Acesse o portal em: <a href="https://tutoriais.educanextest.com.br" style="color: #0075C5;">tutoriais.educanextest.com.br</a></li>
                       <li>Faça login com suas credenciais acima</li>
                       <li><strong>Altere sua senha temporária</strong> nas configurações da conta</li>
                       <li>Explore o sistema de tutoriais disponível</li>
                   </ol>
-                  
+
                   <div style="text-align: center; margin: 30px 0;">
-                      <a href="https://educanextest.com.br" class="button">🚪 Acessar Portal Nextest</a>
+                      <a href="https://tutoriais.educanextest.com.br" class="button">🚪 Acessar Portal Nextest</a>
                   </div>
-                  
+
                   <p style="color: #666; font-size: 14px;">
                       <strong>Dica:</strong> Se preferir, você também pode usar a opção "Esqueci minha senha" na tela de login para definir uma nova senha.
                   </p>
               </div>
-              
+
               <div class="footer">
                   <p>Este email foi enviado automaticamente pelo Portal Nextest</p>
                   <p>Se você não solicitou esta conta, entre em contato com o administrador</p>
@@ -229,12 +229,10 @@ Credenciais de acesso:
 IMPORTANTE: Por segurança, altere sua senha temporária após o primeiro login.
 
 Próximos passos:
-1. Acesse: https://educanextest.com.br
+1. Acesse: https://tutoriais.educanextest.com.br
 2. Faça login com suas credenciais
 3. Altere sua senha temporária
 4. Explore o sistema de tutoriais
-
-Portal Nextest - Sistema de Tutoriais
       `
     };
 
