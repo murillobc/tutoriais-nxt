@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
-import { TutorialReleaseModal } from "@/components/tutorial-release-modal";
+import { TutorialReleaseModal } from "@/components/TutorialReleaseModal";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { TableCell } from "@/components/ui/table";
@@ -39,7 +39,7 @@ interface TutorialRelease {
   status: string;
   expirationDate?: string | null;
   createdAt: string;
-  user: {
+  user?: {
     id: string;
     name: string;
     email: string;
@@ -187,7 +187,7 @@ export default function Dashboard() {
           release.status === 'failed' ? 'Falha' : 'Expirado',
           formatDate(release.createdAt),
           release.expirationDate ? formatDate(release.expirationDate) : 'N/A',
-          release.user.name
+          release.user?.name || 'N/A'
         ]);
       });
       
@@ -420,7 +420,7 @@ export default function Dashboard() {
                       <TableCell>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
                           <User className="h-4 w-4" />
-                          <span>{release.user.name}</span>
+                          <span>{release.user?.name || 'N/A'}</span>
                         </div>
                       </TableCell>
                     </tr>
