@@ -1,11 +1,12 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle, User, Building, Check, Search } from "lucide-react";
+import { X, Upload, Download, FileSpreadsheet, AlertTriangle, CheckCircle, User, Building, Check, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { usePipeCompany } from "@/hooks/usePipeCompany";
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -58,6 +59,7 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
   const [currentStep, setCurrentStep] = useState<'upload' | 'review' | 'results'>('upload');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { searchCompany, isSearching } = usePipeCompany();
 
   const { data: tutorials = [] } = useQuery<Tutorial[]>({
     queryKey: ["/api/tutorials"],
@@ -134,6 +136,14 @@ export function BulkUploadModal({ isOpen, onClose }: BulkUploadModalProps) {
           case 'cnpj':
           case 'company_document':
             client.companyDocument = value;
+            // Buscar empresa automaticamente se CNPJ estiver presente
+            if (value && value.replace(/\D/g, '').length === 14) {
+              searchCompany(value).then(company => {
+                if (company && !client.companyName) {
+                  client.companyName = company.name;
+                }
+              }).catch(console.error);
+            }
             break;
           case 'cargo':
           case 'company_role':

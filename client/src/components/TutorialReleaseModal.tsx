@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { X, User, Building, PlayCircle, Search, Check, NotebookPen } from "lucide-react";
+import { X, User, Building, PlayCircle, Search, Check, NotebookPen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { InputMask } from "@/components/ui/input-mask";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePipeCompany } from "@/hooks/usePipeCompany";
 
 const tutorialReleaseSchema = z.object({
   clientName: z.string().min(1, "Nome é obrigatório"),
@@ -44,6 +45,28 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { searchCompany, isSearching } = usePipeCompany();
+
+  const handleCnpjSearch = async () => {
+    const cnpj = form.getValues("companyDocument");
+    if (!cnpj) {
+      toast({
+        title: "CNPJ obrigatório",
+        description: "Digite um CNPJ para buscar a empresa",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const company = await searchCompany(cnpj);
+    if (company) {
+      form.setValue("companyName", company.name);
+      // Opcionalmente preencher outros campos se disponíveis
+      if (company.email && !form.getValues("clientEmail")) {
+        form.setValue("clientEmail", company.email);
+      }
+    }
+  };
 
   const form = useForm<TutorialReleaseForm>({
     resolver: zodResolver(tutorialReleaseSchema),
@@ -214,13 +237,31 @@ export function TutorialReleaseModal({ isOpen, onClose }: TutorialReleaseModalPr
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="companyDocument">CNPJ *</Label>
-                  <InputMask
-                    id="companyDocument"
-                    mask="cnpj"
-                    placeholder="00.000.000/0000-00"
-                    {...form.register("companyDocument")}
-                    data-testid="input-company-document"
-                  />
+                  <div className="flex space-x-2">
+                    <InputMask
+                      id="companyDocument"
+                      mask="cnpj"
+                      placeholder="00.000.000/0000-00"
+                      {...form.register("companyDocument")}
+                      data-testid="input-company-document"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCnpjSearch}
+                      disabled={isSearching}
+                      data-testid="button-search-company"
+                      className="px-3"
+                    >
+                      {isSearching ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                   {form.formState.errors.companyDocument && (
                     <p className="text-sm text-red-500">{form.formState.errors.companyDocument.message}</p>
                   )}

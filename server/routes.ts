@@ -552,6 +552,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pipe CRM integration - Company search by CNPJ
+  app.get("/api/companies/search", requireAuth, async (req, res) => {
+    try {
+      const { cnpj } = req.query;
+      
+      if (!cnpj || typeof cnpj !== 'string') {
+        return res.status(400).json({ error: "CNPJ é obrigatório" });
+      }
+
+      const PIPE_API_KEY = process.env.PIPE_API_KEY;
+      if (!PIPE_API_KEY) {
+        return res.status(500).json({ error: "API key do Pipe não configurada" });
+      }
+
+      // Remove formatação do CNPJ (deixa só números)
+      const cleanCnpj = cnpj.replace(/\D/g, '');
+
+      const response = await fetch(`https://api.pipe.run/v1/companies?doc=${cleanCnpj}`, {
+        headers: {
+          'Authorization': `Bearer ${PIPE_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Pipe API error:', response.status, await response.text());
+        return res.status(response.status).json({ error: "Erro ao consultar API do Pipe" });
+      }
+
+      const data = await response.json();
+      
+      if (data.data && data.data.length > 0) {
+        const company = data.data[0];
+        res.json({
+          found: true,
+          company: {
+            name: company.name,
+            document: company.doc,
+            email: company.email,
+            phone: company.phone
+          }
+        });
+      } else {
+        res.json({ found: false, message: "Empresa não encontrada" });
+      }
+
+    } catch (error) {
+      console.error("Erro na busca de empresa:", error);
+      res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
+
   app.get("/api/auth/me", async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
