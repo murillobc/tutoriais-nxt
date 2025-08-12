@@ -473,6 +473,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para cadastro em lote de liberações de tutorial
+  app.post("/api/tutorial-releases/bulk", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { releases } = req.body;
+
+      if (!Array.isArray(releases) || releases.length === 0) {
+        return res.status(400).json({ message: "Lista de liberações é obrigatória" });
+      }
+
+      const results = [];
+      const errors = [];
+
+      for (let i = 0; i < releases.length; i++) {
+        try {
+          const releaseData = tutorialReleaseSchema.parse(releases[i]);
+          const release = await storage.createTutorialRelease({
+            ...releaseData,
+            userId
+          });
+
+          results.push({
+            index: i,
+            id: release.id,
+            clientName: releaseData.clientName,
+            status: 'success'
+          });
+
+          // Enviar webhook para cada liberação criada
+          try {
+            await sendTutorialReleaseWebhook(release, releaseData);
+          } catch (webhookError) {
+            console.error(`Webhook failed for release ${release.id}:`, webhookError);
+            // Continua mesmo se o webhook falhar
+          }
+
+        } catch (error) {
+          errors.push({
+            index: i,
+            error: error instanceof Error ? error.message : "Erro desconhecido",
+            data: releases[i]
+          });
+        }
+      }
+
+      res.json({
+        message: `Processamento concluído: ${results.length} sucessos, ${errors.length} erros`,
+        successful: results,
+        failed: errors,
+        total: releases.length
+      });
+
+    } catch (error) {
+      console.error('Bulk release creation error:', error);
+      res.status(500).json({ message: "Erro no processamento em lote" });
+    }
+  });
+
   // Endpoint para gerar relatórios
   app.get("/api/reports/tutorial-releases", requireAuth, async (req, res) => {
     try {

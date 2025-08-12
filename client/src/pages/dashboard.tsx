@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { TutorialReleaseModal } from "@/components/TutorialReleaseModal";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-
+import { BulkUploadModal } from "@/components/BulkUploadModal";
 
 
 interface TutorialRelease {
@@ -44,6 +44,7 @@ interface TutorialRelease {
 
 export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { user, logout } = useAuth();
@@ -66,18 +67,18 @@ export default function Dashboard() {
       release.companyName.toLowerCase().includes(searchTerm.toLowerCase());
 
     let matchesStatus = false;
-    
+
     if (statusFilter === "all") {
       matchesStatus = true;
     } else if (statusFilter === "success") {
       // Para 'success', verificar se não está expirado
-      matchesStatus = release.status === 'Sucesso' && 
-                     release.expirationDate && 
+      matchesStatus = release.status === 'Sucesso' &&
+                     release.expirationDate &&
                      new Date(release.expirationDate) > new Date();
     } else if (statusFilter === "expired") {
       // Para 'expired', verificar se era 'Sucesso' mas já expirou
-      matchesStatus = release.status === 'Sucesso' && 
-                     release.expirationDate && 
+      matchesStatus = release.status === 'Sucesso' &&
+                     release.expirationDate &&
                      new Date(release.expirationDate) <= new Date();
     } else {
       matchesStatus = release.status === statusFilter;
@@ -159,7 +160,7 @@ export default function Dashboard() {
     return names.join(', ');
   };
 
-  
+
 
 
 
@@ -319,23 +320,25 @@ export default function Dashboard() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="flex-1 gradient-button text-white hover:scale-[1.02] transition-all duration-300"
-            data-testid="button-new-release"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Liberação de Tutorial
-          </Button>
-
-          <Button
-            variant="outline"
-            className="sm:w-auto bg-white/20 backdrop-blur border-white/30 hover:bg-white/30"
-            data-testid="button-export"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Exportar Relatório
-          </Button>
+          <div className="flex space-x-3">
+            <Button
+              onClick={() => setIsBulkModalOpen(true)}
+              variant="outline"
+              className="border-nextest-blue text-nextest-blue hover:bg-nextest-blue hover:text-white transition-colors"
+              data-testid="button-bulk-upload"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Upload em Lote
+            </Button>
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              className="gradient-button text-white hover:scale-[1.02] transition-all duration-300"
+              data-testid="button-new-release"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Liberação
+            </Button>
+          </div>
         </div>
 
         {/* Recent Releases Section */}
@@ -468,6 +471,11 @@ export default function Dashboard() {
       <TutorialReleaseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <BulkUploadModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
       />
     </div>
   );
