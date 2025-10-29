@@ -59,7 +59,7 @@ export default function Register() {
       <div className="glass-effect rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
           <img 
-            src="https://educanextest.com.br/wp-content/uploads/2024/04/Group-13Logo-Horizontal-Educa-SVG-Fix.svg" 
+            src="https://raw.githubusercontent.com/murillobc/tutoriais-nxt/00bbe31bf09468df39965e4396449bf1daadbc02/logo-educa-nxt-escuro.png" 
             alt="Educa Nextest Logo" 
             className="w-48 mx-auto mb-6 drop-shadow-sm"
           />
