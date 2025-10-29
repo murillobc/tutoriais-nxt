@@ -188,7 +188,7 @@ export default function Login() {
     <div className="glass-effect rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
       <div className="text-center mb-8">
         <img 
-          src="../../logo-educa-nxt.png" 
+          src="https://raw.githubusercontent.com/murillobc/tutoriais-nxt/41f42411982c4833e38678d3e32e9ed5e7cf09f7/logo-educa-nxt.png" 
           alt="Educa Nextest Logo" 
           className="w-48 mx-auto mb-6 drop-shadow-sm"
         />
