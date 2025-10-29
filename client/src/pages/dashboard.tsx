@@ -237,7 +237,7 @@ export default function Dashboard() {
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-4">
               <img
-                src="https://educanextest.com.br/wp-content/uploads/2024/04/Group-13Logo-Horizontal-Educa-SVG-Fix.svg"
+                src="https://github.com/murillobc/tutoriais-nxt/blob/1cea411ac92d875cf747962da2ae9bb19396619d/logo-educa-nxt-escuro.png"
                 alt="Logo"
                 className="h-8"
               />
