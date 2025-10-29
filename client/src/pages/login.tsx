@@ -188,7 +188,7 @@ export default function Login() {
     <div className="glass-effect rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
       <div className="text-center mb-8">
         <img 
-          src="https://raw.githubusercontent.com/murillobc/tutoriais-nxt/41f42411982c4833e38678d3e32e9ed5e7cf09f7/logo-educa-nxt.png" 
+          src="https://github.com/murillobc/tutoriais-nxt/blob/1cea411ac92d875cf747962da2ae9bb19396619d/logo-educa-nxt-escuro.png" 
           alt="Educa Nextest Logo" 
           className="w-48 mx-auto mb-6 drop-shadow-sm"
         />
@@ -276,7 +276,7 @@ export default function Login() {
     <div className="glass-effect rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
       <div className="text-center mb-8">
         <img 
-          src="https://educanextest.com.br/wp-content/uploads/2024/04/Group-13Logo-Horizontal-Educa-SVG-Fix.svg" 
+          src="https://github.com/murillobc/tutoriais-nxt/blob/1cea411ac92d875cf747962da2ae9bb19396619d/logo-educa-nxt-escuro.png" 
           alt="Educa Nextest Logo" 
           className="w-48 mx-auto mb-6 drop-shadow-sm"
         />
